@@ -4,7 +4,7 @@ Data Collector - Coleta dados de TODOS os canais disponíveis.
 Multi-canal: LCU, Live API, RiotClient, Game Process, Game Logs.
 Alimenta o detector com dados consolidados em tempo real.
 """
-import json, time, os, threading, subprocess, re
+import json, time, os, threading, subprocess, re, requests
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List

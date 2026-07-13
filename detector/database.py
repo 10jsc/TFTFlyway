@@ -202,7 +202,7 @@ class SuspectDatabase:
         suspects = self.get_suspect_count()
         cur.execute("SELECT COUNT(*) as c FROM encounters")
         total_encounters = cur.fetchone()["c"]
-        cur.execute("SELECT AVG(score) as avg FROM suspects")
+        cur.execute("SELECT AVG(total_score) as avg FROM suspects")
         avg_row = cur.fetchone()
         return {
             "total_suspects": sum(suspects.values()),
