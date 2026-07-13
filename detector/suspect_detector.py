@@ -432,16 +432,24 @@ class SuspectDetector:
         while self._monitoring:
             try:
                 jogadores = []
-                # Tenta Live API primeiro, depois LCU
-                if self.live and self.live.available:
-                    players = self.live.get_player_list()
-                    jogadores = [p.get("summonerName", "") for p in players
-                                 if p.get("summonerName", "").lower() != self._meu_nome.lower()]
-                elif self.lcu and self.lcu.connected:
+                # Tenta Live API primeiro (re-check a cada ciclo)
+                if self.live:
+                    if not self.live.available:
+                        self.live.check()  # Tenta reconectar
+                    if self.live.available:
+                        players = self.live.get_player_list()
+                        jogadores = [p.get("summonerName", "") for p in players
+                                     if p.get("summonerName", "").lower() != self._meu_nome.lower()]
+
+                # Fallback: LCU (dados do lobby/pre-jogo)
+                if not jogadores and self.lcu and self.lcu.connected:
                     jogadores = [m.get("summonerName", "") for m in self.lcu.get_player_list()]
 
                 if jogadores:
                     self.escanear_sala(jogadores)
+                elif self._monitoring:
+                    # Silencio: so mostra se passou muito tempo sem dados
+                    pass
             except Exception as e:
                 print(f"  ⚠️ Erro no monitoramento: {e}")
             time.sleep(interval)

@@ -250,8 +250,21 @@ class TFTFlyway:
                     em_partida = True
                     total_varreduras = 0
                     print(f"\n{C.G}{'='*50}{C.RESET}")
-                    print(f"{C.G}🎮 PARTIDA INICIADA! Monitorando...{C.RESET}")
+                    print(f"{C.G}🎮 PARTIDA INICIADA! Aguardando Live API...{C.RESET}")
                     print(f"{C.G}{'='*50}{C.RESET}")
+
+                    # Aguarda Live API ficar disponivel
+                    for tentativa in range(15):
+                        if self.live.check():
+                            self.player_tracker.live = self.live
+                            print(f"   {C.G}✅ Live API online!{C.RESET}")
+                            break
+                        print(f"   {C.D}Aguardando Live API ({tentativa+1}/15)...{C.RESET}")
+                        time.sleep(2)
+                    else:
+                        print(f"   {C.Y}⚠️ Live API não respondeu. Usando LCU.{C.RESET}")
+
+                    print(f"{C.G}🚀 Monitorando partida...{C.RESET}")
                     self.detector.iniciar_monitoramento(interval)
 
                 elif phase not in ("InGame", "InProgress", "Reconnect", "PreEndOfGame") and em_partida:
