@@ -536,9 +536,12 @@ class SuspectDetector:
                                  self._limpar_nome(j), 0))
                              > self._scan_cache_ttl]
                     if novos:
-                        self.escanear_sala(novos)
+                        res = self.escanear_sala(novos)
                         for j in novos:
                             self._scan_cache[self._limpar_nome(j)] = agora
+                        hackers = [r for r in res if r and r.get("is_hacker")]
+                        for h in hackers:
+                            print(f"  🚨 HACKER: {h['player']} (score: {h['score_total']})")
             except Exception as e:
                 print(f"  ⚠️ Erro no monitoramento: {e}")
             time.sleep(interval)
