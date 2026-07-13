@@ -8,3 +8,15 @@ logs*/
 *.log
 *.exe
 *.etl
+
+# Seguranca: config.json gerado pelo API Key Manager
+config.json
+
+# Arquivos temporarios de teste
+test_*.py
+test_*.txt
+check_db.py
+run_auto.py
+monitor_*.txt
+auto_log.txt
+enc_test*.txt
