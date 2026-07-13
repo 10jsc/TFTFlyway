@@ -208,6 +208,58 @@ class TFTFlyway:
             avg_score=sum(r.get("score_total", 0) for r in resultados) / len(resultados) if resultados else 0
         )
 
+    def cmd_prescan(self, args=""):
+        """🔍 PRÉ-SCAN: Analisa jogadores no lobby ANTES da partida."""
+        print(f"\n{C.BOLD}{C.M}╔══════════════════════════════════════╗{C.RESET}")
+        print(f"{C.BOLD}{C.M}║      🔍 PRÉ-SCAN DE LOBBY            ║{C.RESET}")
+        print(f"{C.BOLD}{C.M}╚══════════════════════════════════════╝{C.RESET}")
+
+        jogadores = self.lcu.get_player_list() if self.lcu.connected else []
+        if not jogadores:
+            print(f"   {C.Y}⚠️ Nenhum jogador no lobby. Conectado ao LoL?{C.RESET}")
+            return
+
+        nomes = [j.get("summonerName", "?") for j in jogadores]
+        print(f"   👥 {len(nomes)} jogador(es) no lobby:")
+        for n in nomes:
+            print(f"      • {n}")
+
+        resultado = self.detector.prescan_lobby(nomes)
+        if not resultado.get("jogadores"):
+            print(f"\n   {C.Y}Não foi possível analisar os jogadores.{C.RESET}")
+            return
+
+        print(f"\n{C.BOLD}{C.CY}{'═'*50}{C.RESET}")
+        for p in resultado["jogadores"]:
+            cor = C.R if p["score"] >= 60 else (C.Y if p["score"] >= 30 else C.D)
+            print(f"   {cor}{p['player']:20s}{C.RESET} | "
+                  f"Score: {cor}{p['score']:>5.1f}{C.RESET} | "
+                  f"{p['nivel']:8s} | {p['fonte']}")
+
+        risco = resultado["risco_medio"]
+        print(f"\n   📊 Risco médio: ", end="")
+        if risco >= 60:
+            print(f"{C.R}{risco}/100 — ALTO!{C.RESET}")
+        elif risco >= 30:
+            print(f"{C.Y}{risco}/100 — Moderado{C.RESET}")
+        else:
+            print(f"{C.G}{risco}/100 — Baixo{C.RESET}")
+
+        if resultado["hacker_encontrado"]:
+            print(f"\n{C.R}{'🔴'*25}{C.RESET}")
+            print(f"{C.BOLD}{C.R}🚨 DODGE RECOMENDADO! HACKER NA SALA!{C.RESET}")
+            print(f"{C.R}{'🔴'*25}{C.RESET}")
+            for a in resultado["alertas"]:
+                print(f"   {C.R}{a}{C.RESET}")
+            print(f"\n{C.R}⚠️ Saia da fila imediatamente!{C.RESET}")
+        elif resultado["alertas"]:
+            print(f"\n{C.Y}⚠️ Jogadores suspeitos:{C.RESET}")
+            for a in resultado["alertas"]:
+                print(f"   {a}")
+        else:
+            print(f"\n{C.G}✅ Sala segura!{C.RESET}")
+        print()
+
     def cmd_monitor(self, args=""):
         """Inicia monitoramento contínuo."""
         interval = int(args) if args.isdigit() else 10
@@ -245,6 +297,26 @@ class TFTFlyway:
                 if phase != last_phase:
                     print(f"   {C.CY}📌 Fase: {phase}{C.RESET}")
                     last_phase = phase
+
+                    # PRÉ-SCAN automático quando entra no lobby
+                    if phase in ("Lobby", "Matchmaking", "ReadyCheck"):
+                        print(f"\n{C.CY}🔍 Pré-scan do lobby...{C.RESET}")
+                        lobby_players = self.lcu.get_player_list()
+                        if lobby_players:
+                            nomes = [j.get("summonerName", "?") for j in lobby_players]
+                            resultado = self.detector.prescan_lobby(nomes)
+                            if resultado["hacker_encontrado"]:
+                                print(f"\n{C.R}{'🔴'*25}{C.RESET}")
+                                print(f"{C.BOLD}{C.R}🚨 DODGE! HACKER NA SALA!{C.RESET}")
+                                print(f"{C.R}{'🔴'*25}{C.RESET}")
+                                for a in resultado["alertas"]:
+                                    print(f"   {C.R}{a}{C.RESET}")
+                            elif resultado["alertas"]:
+                                print(f"\n{C.Y}⚠️ Suspeitos:{C.RESET}")
+                                for a in resultado["alertas"]:
+                                    print(f"   {a}")
+                            else:
+                                print(f"\n{C.G}✅ Sala segura!{C.RESET}")
 
                 if phase in ("InGame", "InProgress") and not em_partida:
                     em_partida = True
@@ -510,6 +582,7 @@ class TFTFlyway:
 {'═' * 50}
 {C.BOLD}Anti-Cheat / Detecção:{C.RESET}
   {C.G}scan{C.RESET}                          Escaneia jogadores na sala atual
+  {C.G}prescan{C.RESET}                       🔍 PRÉ-SCAN do lobby (antes da partida)
   {C.G}monitor [N]{C.RESET}                   Monitoramento contínuo (N=intervalo)
   {C.G}auto [N]{C.RESET}                      🤖 Modo automático (detecta partida)
   {C.G}search <nome>{C.RESET}                 Analisa um jogador específico

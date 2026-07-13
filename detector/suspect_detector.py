@@ -409,8 +409,88 @@ class SuspectDetector:
             print(f"  🔍 Escaneando: {j}")
             res = self.escanear_jogador(j, match_id)
             resultados.append(res)
-            time.sleep(0.5)  # Rate limit
+            time.sleep(0.5)
         return resultados
+
+    # ================================================================
+    # PRÉ-SCAN (LOBBY, ANTES DA PARTIDA)
+    # ================================================================
+    def prescan_lobby(self, jogadores: List[str]) -> Dict:
+        """PRÉ-SCAN rápido do lobby (antes da partida).
+        Usa cache do banco + scan limitado a 5 partidas."""
+        from datetime import datetime
+        resultados = []
+        total_risco = 0.0
+        alertas = []
+
+        for nome_raw in jogadores:
+            nome = self._limpar_nome(nome_raw)
+            if nome.lower() == self._meu_nome.lower():
+                continue
+
+            puuid = None
+            if self.riot:
+                try:
+                    summ = self.riot.get_summoner_by_name(urllib.parse.quote(nome))
+                    puuid = summ.get("puuid") if summ else None
+                except:
+                    pass
+
+            score = 0
+            nivel = "BAIXO"
+            is_hacker = False
+            fonte = ""
+
+            # 1. Verifica banco local primeiro
+            if puuid and self.db:
+                sus = self.db.get_suspect(puuid)
+                if sus:
+                    score = sus.get("max_score", 0)
+                    nivel = sus.get("nivel_max", "BAIXO")
+                    is_hacker = sus.get("status") == "hacker"
+                    fonte = f"banco ({sus.get('total_meets', 1)} encontros)"
+
+            # 2. Se não tem no banco, scan rápido (5 partidas)
+            if not fonte and puuid and self.riot:
+                old = self.MATCHES_TO_ANALYZE
+                self.MATCHES_TO_ANALYZE = 5
+                historico = self.analisar_historico(nome, puuid)
+                self.MATCHES_TO_ANALYZE = old
+                if historico:
+                    comp = self.analisar_comportamento(nome)
+                    res = self.calcular_score(historico, comp)
+                    score = res["score_total"]
+                    nivel = res["nivel"]
+                    is_hacker = res["is_hacker"]
+                    fonte = "scan (5 partidas)"
+                    if self.db:
+                        self.db.add_or_update_suspect(puuid, nome, "", score, nivel, is_hacker)
+                else:
+                    fonte = "sem dados"
+
+            resultados.append({
+                "player": nome, "puuid": puuid,
+                "score": round(score, 1), "nivel": nivel,
+                "is_hacker": is_hacker, "fonte": fonte
+            })
+            total_risco += score
+
+            if is_hacker:
+                alertas.append(f"🔴 {nome} — HACKER CONHECIDO (score: {score})")
+            elif nivel in ("ALTO", "CRÍTICO"):
+                alertas.append(f"🟠 {nome} — Score alto: {score} ({nivel})")
+
+            time.sleep(0.3)
+
+        n = len([r for r in resultados if r["puuid"]])
+        return {
+            "jogadores": resultados,
+            "total_analisados": n,
+            "risco_medio": round(total_risco / n, 1) if n > 0 else 0,
+            "hacker_encontrado": any(r["is_hacker"] for r in resultados),
+            "alertas": alertas,
+            "timestamp": datetime.now().isoformat()
+        }
 
     # ----------------------------------------------------------------
     # MONITORAMENTO CONTÍNUO
