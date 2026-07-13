@@ -30,6 +30,7 @@ from core.live_api import LiveAPI
 from core.riot_api import RiotAPI
 from core.server_probe import ServerProbe
 from core.collector import DataCollector
+from core.api_key_manager import APIKeyManager
 from detector.database import SuspectDatabase
 from detector.suspect_detector import SuspectDetector
 from detector.player_tracker import PlayerTracker
@@ -52,6 +53,7 @@ class TFTFlyway:
         # Módulos Core
         self.lcu = LCUBridge(self.config.get("lockfile_path"))
         self.live = LiveAPI()
+        self.api_key_mgr = APIKeyManager()
         self.riot: RiotAPI = None
         self.collector = DataCollector()
         self.server_probe = ServerProbe()
@@ -139,31 +141,52 @@ class TFTFlyway:
         print()
 
     def _setup_riot_api(self):
-        """Configura API Key da Riot."""
-        # Tenta .env primeiro
-        if "riot_api_key" in self.config:
-            self.api_key = self.config["riot_api_key"]
+        """Configura API Key da Riot com renovacao automatica."""
+        # Tenta chave do gerenciador (config.json ou .env)
+        self.api_key = self.api_key_mgr.key or self.config.get("riot_api_key", "")
 
         if not self.api_key:
             print(f"\n{C.Y}⚠️ Riot API Key necessária!{C.RESET}")
-            print(f"   Obtenha em: https://developer.riotgames.com/")
-            self.api_key = input(f"   🔑 API Key: ").strip()
+            manual = input(f"   🔑 Digite a API Key (Enter para renovar automaticamente): ").strip()
+            if manual:
+                self.api_key = manual
+            else:
+                print(f"   {C.D}Iniciando renovacao automatica...{C.RESET}")
 
-        self.riot = RiotAPI(self.api_key)
+        if self.api_key:
+            self.api_key_mgr.key = self.api_key
+            self.riot = RiotAPI(self.api_key)
 
-        # Valida
         game_name = self.config.get("riot_id", self.meu_nome or "0Ph4nT3on")
         tagline = self.config.get("tagline", "5083")
-        account = self.riot.get_account_by_riot_id(game_name, tagline)
+        valida = False
 
-        if account:
+        if self.riot:
+            account = self.riot.get_account_by_riot_id(game_name, tagline)
+            valida = account is not None
+
+        if valida:
             print(f"   {C.G}✅ API Key válida! Conta: {game_name}#{tagline}{C.RESET}")
-            if not self.meu_puuid:
+            if self.api_key_mgr.key and self.api_key_mgr.key != self.api_key:
+                self.api_key = self.api_key_mgr.key
+            if not self.meu_puuid and account:
                 self.meu_puuid = account.get("puuid", "")
                 self.detector.set_me(game_name, self.meu_puuid)
         else:
-            print(f"   {C.R}❌ API Key inválida ou conta não encontrada{C.RESET}")
-            print(f"   {C.Y}⚠️ Algumas funções serão limitadas{C.RESET}")
+            print(f"   {C.Y}⚠️ API Key inválida/expirada. Tentando renovar...{C.RESET}")
+            if self.api_key_mgr.renew():
+                self.api_key = self.api_key_mgr.key
+                self.riot = RiotAPI(self.api_key)
+                account2 = self.riot.get_account_by_riot_id(game_name, tagline)
+                if account2:
+                    print(f"   {C.G}✅ Chave renovada!{C.RESET}")
+                    if not self.meu_puuid:
+                        self.meu_puuid = account2.get("puuid", "")
+                        self.detector.set_me(game_name, self.meu_puuid)
+                else:
+                    print(f"   {C.R}❌ Falha na renovacao.{C.RESET}")
+            else:
+                print(f"   {C.R}❌ Não foi possível renovar.{C.RESET}")
 
     # ----------------------------------------------------------------
     # COMANDOS
@@ -214,13 +237,39 @@ class TFTFlyway:
         print(f"{C.BOLD}{C.M}║      🔍 PRÉ-SCAN DE LOBBY            ║{C.RESET}")
         print(f"{C.BOLD}{C.M}╚══════════════════════════════════════╝{C.RESET}")
 
-        jogadores = self.lcu.get_player_list() if self.lcu.connected else []
+        jogadores = []
+        fase = self.lcu.get_gameflow_phase() if self.lcu.connected else ""
+
+        if fase in ("InGame", "InProgress"):
+            if self.live.check():
+                players = self.live.get_player_list()
+                jogadores = [{"summonerName": p.get("summonerName", "")} for p in players]
+            if not jogadores and self.lcu.connected:
+                try:
+                    import requests as req
+                    r = req.get(f"https://127.0.0.1:{self.lcu.port}/lol-tft/v1/session",
+                               auth=("riot", self.lcu.token), verify=False, timeout=2)
+                    if r.status_code == 200:
+                        data = r.json()
+                        ps = data.get("players", data.get("participants", []))
+                        jogadores = [{"summonerName": p.get("summonerName", p.get("name", "?"))} for p in ps]
+                except:
+                    pass
+        elif self.lcu.connected:
+            jogadores = self.lcu.get_player_list()
+
         if not jogadores:
-            print(f"   {C.Y}⚠️ Nenhum jogador no lobby. Conectado ao LoL?{C.RESET}")
+            print(f"   {C.Y}⚠️ Nenhum jogador encontrado.")
+            if not fase:
+                print(f"   {C.Y}   LCU desconectado. League of Legends está aberto?{C.RESET}")
+            elif fase in ("InGame", "InProgress"):
+                print(f"   {C.Y}   Live API indisponível. Habilite nas config do LoL.{C.RESET}")
+            else:
+                print(f"   {C.Y}   Fase atual: {fase}. Entre em um lobby primeiro.{C.RESET}")
             return
 
         nomes = [j.get("summonerName", "?") for j in jogadores]
-        print(f"   👥 {len(nomes)} jogador(es) no lobby:")
+        print(f"   👥 {len(nomes)} jogador(es) encontrados (fase: {fase}):")
         for n in nomes:
             print(f"      • {n}")
 
