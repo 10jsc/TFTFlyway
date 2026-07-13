@@ -13,6 +13,14 @@ from pathlib import Path
 from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
+# Configura encoding UTF-8 para suportar caracteres Unicode no terminal
+if sys.stdout.encoding and sys.stdout.encoding.upper() not in ('UTF-8', 'UTF8'):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.stderr.encoding and sys.stderr.encoding.upper() not in ('UTF-8', 'UTF8'):
+    import io
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 # Adiciona diretório raiz ao path
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT))
@@ -212,6 +220,66 @@ class TFTFlyway:
         except KeyboardInterrupt:
             self.detector.parar_monitoramento()
             print(f"\n{C.Y}⏹️ Monitoramento parado.{C.RESET}")
+
+    def cmd_auto(self, args=""):
+        """🤖 MODO AUTOMÁTICO: Detecta partida, monitora, para sozinho."""
+        interval = int(args) if args.isdigit() else 5
+        print(f"\n{C.BOLD}{C.M}╔══════════════════════════════════════╗{C.RESET}")
+        print(f"{C.BOLD}{C.M}║      🤖 TFTFlyway MODO AUTOMÁTICO    ║{C.RESET}")
+        print(f"{C.BOLD}{C.M}╚══════════════════════════════════════╝{C.RESET}")
+        print(f"   {C.D}Aguardando início de partida...{C.RESET}")
+        print(f"   {C.D}Monitoramento a cada {interval}s{C.RESET}")
+        print(f"   {C.D}Pressione Ctrl+C para parar{C.RESET}\n")
+
+        self.running = True
+        last_phase = ""
+        em_partida = False
+        total_varreduras = 0
+
+        try:
+            while self.running:
+                phase = self.lcu.get_gameflow_phase() if self.lcu.connected else None
+                if not phase:
+                    phase = "Desconectado"
+
+                if phase != last_phase:
+                    print(f"   {C.CY}📌 Fase: {phase}{C.RESET}")
+                    last_phase = phase
+
+                if phase in ("InGame", "InProgress") and not em_partida:
+                    em_partida = True
+                    total_varreduras = 0
+                    print(f"\n{C.G}{'='*50}{C.RESET}")
+                    print(f"{C.G}🎮 PARTIDA INICIADA! Monitorando...{C.RESET}")
+                    print(f"{C.G}{'='*50}{C.RESET}")
+                    self.detector.iniciar_monitoramento(interval)
+
+                elif phase not in ("InGame", "InProgress", "Reconnect", "PreEndOfGame") and em_partida:
+                    em_partida = False
+                    self.detector.parar_monitoramento()
+                    print(f"\n{C.Y}{'='*50}{C.RESET}")
+                    print(f"{C.Y}⏹️ Partida encerrada ({phase}){C.RESET}")
+                    print(f"{C.Y}{'='*50}{C.RESET}")
+
+                    relatorio = self.detector.get_relatorio()
+                    hackers = relatorio.get("hackers", [])
+                    if hackers:
+                        print(f"\n{C.R}🚨 Hackers detectados:{C.RESET}")
+                        for h in hackers:
+                            print(f"   ⚠️ {C.BOLD}{h}{C.RESET}")
+                    else:
+                        print(f"\n{C.G}✅ Partida limpa!{C.RESET}")
+                    print(f"   📊 Total de varreduras: {total_varreduras}")
+                    print(f"\n{C.D}Aguardando próxima partida...{C.RESET}\n")
+
+                if em_partida:
+                    total_varreduras += 1
+
+                time.sleep(2)
+
+        except KeyboardInterrupt:
+            self.detector.parar_monitoramento()
+            print(f"\n{C.Y}⏹️ Modo automático encerrado.{C.RESET}")
 
     def cmd_report(self, args=""):
         """Exibe relatório completo."""
@@ -429,7 +497,8 @@ class TFTFlyway:
 {'═' * 50}
 {C.BOLD}Anti-Cheat / Detecção:{C.RESET}
   {C.G}scan{C.RESET}                          Escaneia jogadores na sala atual
-  {C.G}monitor [N]{C.RESET}                   Monitoramento contínuo (N=intervalo em seg)
+  {C.G}monitor [N]{C.RESET}                   Monitoramento contínuo (N=intervalo)
+  {C.G}auto [N]{C.RESET}                      🤖 Modo automático (detecta partida)
   {C.G}search <nome>{C.RESET}                 Analisa um jogador específico
   {C.G}blacklist{C.RESET}                     Lista negra de hackers confirmados
 
@@ -547,9 +616,9 @@ def main():
 Exemplos:
   python main.py                          # Menu interativo
   python main.py scan                     # Escaneia sala uma vez
+  python main.py auto                     # 🤖 Modo automático
   python main.py monitor                  # Monitoramento contínuo
   python main.py dashboard                # Dashboard web
-  python main.py dashboard 8080           # Dashboard na porta 8080
   python main.py search "Jogador#BR1"     # Busca jogador
   python main.py report                   # Relatório
         """
