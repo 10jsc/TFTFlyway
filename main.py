@@ -362,6 +362,34 @@ class TFTFlyway:
             print(f"   Porta: {gp.get('SERVER_PORT', '?')}")
             print(f"   GameID: {gp.get('GameID', '?')}")
 
+    def cmd_players(self, args=""):
+        """Mostra jogadores na partida com dados ao vivo."""
+        if not self.live.available:
+            print(f"{C.Y}⚠️ Live API indisponível. Em uma partida?{C.RESET}")
+            return
+
+        players = self.live.get_all_players_summary()
+        active = self.live.get_active_player()
+
+        print(f"\n{C.BOLD}{C.CY}👥 Jogadores na Partida{C.RESET}")
+        print(f"{'═' * 60}")
+        for p in players:
+            nome = p.get("name", "?")
+            if "#" in nome:
+                nome = nome.split("#")[0]
+            champ = p.get("champion", "?")
+            lvl = p.get("level", "?")
+            items = len(p.get("items", []))
+
+            # Destaca o próprio jogador
+            prefix = f"{C.G}▶{C.RESET}" if nome.lower() == self.meu_nome.lower() else " "
+            print(f" {prefix} {C.BOLD}{nome[:15]:15s}{C.RESET} | {champ[:10]:10s} | Lvl {lvl} | {items} itens")
+        print(f"{'═' * 60}")
+        if active:
+            gold = active.get("currentGold", 0)
+            level = active.get("level", 0)
+            print(f"   🪙 Gold: {gold}  |  📊 Level: {level}")
+
     def cmd_blacklist(self, args=""):
         """Mostra lista negra de hackers confirmados."""
         if not self.db:
@@ -407,6 +435,7 @@ class TFTFlyway:
 
 {C.BOLD}Rastreamento:{C.RESET}
   {C.G}track [N]{C.RESET}                     Rastreia partida em tempo real (N=intervalo)
+  {C.G}players{C.RESET}                       Mostra jogadores com dados ao vivo
   {C.G}probe{C.RESET}                         Sonda o servidor TFT diretamente
   {C.G}collect{C.RESET}                       Coleta dados de todos os canais
 

@@ -4,7 +4,7 @@ TFT Suspect Detector v2 - Motor de detecção híbrido.
 Combina análise histórica (API Riot) + comportamento em tempo real (Live API / LCU).
 Gera score de suspeição e alimenta o banco de dados.
 """
-import time, json, threading
+import time, json, threading, urllib.parse
 from pathlib import Path
 from typing import Optional, Dict, List, Any, Callable
 from datetime import datetime
@@ -357,7 +357,7 @@ class SuspectDetector:
         # Busca PUUID via API
         puuid = None
         if self.riot:
-            nome_encoded = nome_limpo.replace(" ", "%20")
+            nome_encoded = urllib.parse.quote(nome_limpo)
             summ = self.riot.get_summoner_by_name(nome_encoded)
             if summ:
                 puuid = summ.get("puuid")

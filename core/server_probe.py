@@ -67,9 +67,22 @@ Write-Host $cmd
 
     @property
     def in_game(self) -> bool:
-        """Verifica se o jogo está rodando."""
+        """Verifica se o jogo está rodando (também via processo simples)."""
         info = self.extract_game_info()
-        return info is not None
+        if info:
+            return True
+        # Fallback: verifica só se o processo existe
+        try:
+            import subprocess
+            r = subprocess.run(
+                ["powershell.exe", "-NoProfile", "-Command",
+                 "Get-Process 'League of Legends' -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count"],
+                capture_output=True, text=True, timeout=3,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
+            return r.stdout.strip() == "1"
+        except Exception:
+            return False
 
     # ----------------------------------------------------------------
     def probe_server(self) -> List[Dict]:
