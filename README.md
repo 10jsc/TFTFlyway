@@ -83,6 +83,7 @@ Digite `help` para ver todos os comandos.
 |---|---|
 | `scan` | Escaneia jogadores na sala atual |
 | `monitor [N]` | Monitoramento contínuo (N=intervalo em seg) |
+| `auto [N]` | 🤖 Modo automático — detecta partida sozinho |
 | `search <nome>` | Analisa um jogador específico |
 | `blacklist` | Lista negra de hackers confirmados |
 
