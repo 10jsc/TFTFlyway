@@ -67,6 +67,10 @@ class SuspectDetector:
         self._monitoring = False
         self._monitor_thread: Optional[threading.Thread] = None
 
+        # Cache de scan (evita re-escanear mesmos jogadores)
+        self._scan_cache: Dict[str, float] = {}
+        self._scan_cache_ttl = 120  # segundos antes de re-escanear
+
     # ----------------------------------------------------------------
     def on_hacker_detected(self, callback: Callable):
         """Callback quando um hacker é detectado."""
@@ -526,10 +530,15 @@ class SuspectDetector:
                     jogadores = [m.get("summonerName", "") for m in self.lcu.get_player_list()]
 
                 if jogadores:
-                    self.escanear_sala(jogadores)
-                elif self._monitoring:
-                    # Silencio: so mostra se passou muito tempo sem dados
-                    pass
+                    agora = time.time()
+                    novos = [j for j in jogadores
+                             if (agora - self._scan_cache.get(
+                                 self._limpar_nome(j), 0))
+                             > self._scan_cache_ttl]
+                    if novos:
+                        self.escanear_sala(novos)
+                        for j in novos:
+                            self._scan_cache[self._limpar_nome(j)] = agora
             except Exception as e:
                 print(f"  ⚠️ Erro no monitoramento: {e}")
             time.sleep(interval)
