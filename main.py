@@ -509,6 +509,39 @@ class TFTFlyway:
         else:
             print(f"{C.Y}⚠️ Nenhuma resposta do servidor (protocolo criptografado){C.RESET}")
 
+    def cmd_tftstats(self, args=""):
+        """📊 Mostra dados completos da partida TFT via LCU."""
+        if not self.lcu.connected:
+            print(f"{C.Y}⚠️ LCU nao conectado.{C.RESET}")
+            return
+        data = self.lcu.get_all_tft_data()
+        p = data.get("player") or {}
+        state = data.get("state") or {}
+        traits = data.get("traits") or []
+        augments = data.get("augments") or {}
+        board = data.get("board") or []
+        bench = data.get("bench") or []
+        shop = data.get("shop") or []
+
+        print(f"\n{C.BOLD}{C.CY}📊 Dados da Partida (via LCU){C.RESET}")
+        print(f"{'═'*50}")
+        print(f"   🪙 Gold: {p.get('gold', '?')}  |  📊 Level: {p.get('level', '?')}")
+        print(f"   ❤️ HP: {p.get('hp', '?')}  |  🏆 Coloc: {p.get('placement', '?')}")
+        print(f"   🎲 Stage: {state.get('stage', '?')}-{state.get('round', '?')}")
+        if board:
+            print(f"\n{C.BOLD}Board ({len(board)}):{C.RESET}")
+            for c in board[:8]:
+                print(f"   ★{c.get('tier', 1)} {c.get('character_id', '?')}")
+        if bench:
+            print(f"\n{C.BOLD}Bench ({len(bench)}):{C.RESET}")
+            for c in bench[:5]:
+                print(f"   ★{c.get('tier', 1)} {c.get('character_id', '?')}")
+        if shop:
+            print(f"\n{C.BOLD}Loja:{C.RESET}")
+            for i, c in enumerate(shop):
+                print(f"   [{i}] {c.get('character_id', 'vazio')}")
+        print()
+
     def cmd_track(self, args=""):
         """Inicia rastreamento em tempo real da partida."""
         interval = float(args) if args.replace('.','',1).isdigit() else 2.0
@@ -637,7 +670,8 @@ class TFTFlyway:
   {C.G}blacklist{C.RESET}                     Lista negra de hackers confirmados
 
 {C.BOLD}Rastreamento:{C.RESET}
-  {C.G}track [N]{C.RESET}                     Rastreia partida em tempo real (N=intervalo)
+  {C.G}track [N]{C.RESET}                     Rastreia partida em tempo real
+  {C.G}tftstats{C.RESET}                      📊 Dados TFT via LCU (gold, board, loja)
   {C.G}players{C.RESET}                       Mostra jogadores com dados ao vivo
   {C.G}probe{C.RESET}                         Sonda o servidor TFT diretamente
   {C.G}collect{C.RESET}                       Coleta dados de todos os canais
