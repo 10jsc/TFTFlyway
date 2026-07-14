@@ -1,6 +1,11 @@
 @echo off
 title TFTFlyway - Modo Automático
-cd /d "F:\Projestos_IA_DeepS_BootStrap5CDN\Github_copilot"
+cd /d "%~dp0"
 set PYTHONIOENCODING=utf-8
-python -u main.py auto 5
+echo.
+echo  ========================================
+echo    🛡️  TFTFlyway - Iniciando Monitor
+echo  ========================================
+echo.
+python -u monitor.py
 pause
