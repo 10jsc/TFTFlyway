@@ -36,9 +36,11 @@ vivo (Live API) e na API da Riot para analisar jogadores em tempo real.
        - RIOT_DEV_USER=...        ← email do portal Riot
        - RIOT_DEV_PASS=...        ← senha do portal Riot
 
-  1.4. Ative a Live API nas config do LoL (uma vez):
-       Configurações → Jogo →
-       ✅ Habilitar API de Dados do Cliente ao Vivo
+  1.4. Live API do LoL:
+       O sistema usa a Live API (porta 2999) para dados em tempo real.
+       Nas versões atuais do LoL ela já vem ativada por padrão ✅
+       Se não funcionar, verifique em:
+       Configurações → Jogo → Habilitar API de Dados do Cliente ao Vivo
 
 ================================================================================
 2. COMO USAR NO DIA A DIA
