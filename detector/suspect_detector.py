@@ -117,7 +117,15 @@ class SuspectDetector:
             if (time.time() - cache_time) < (self.CACHE_MINUTOS * 60):
                 return self.historico_cache[puuid]["dados"]
 
-        match_ids = self.riot.get_match_ids(puuid, self.MATCHES_TO_ANALYZE)
+        # Tenta regiao principal, depois fallbacks (americas -> europe -> asia)
+        match_ids = []
+        for reg in ["americas", "europe", "asia"]:
+            try:
+                match_ids = self.riot.get_match_ids(puuid, self.MATCHES_TO_ANALYZE, region=reg)
+                if match_ids:
+                    break
+            except:
+                pass
         if not match_ids:
             return None
 
@@ -366,26 +374,46 @@ class SuspectDetector:
             resultado_padrao["razoes"] = ["Próprio jogador"]
             return resultado_padrao
 
-        # Busca PUUID via API (Riot ID completo: Nome#Tag)
+        # ============================================================
+        # FALLBACKS EM CASCATA: busca PUUID (5 estrategias)
+        # ============================================================
         puuid = None
-        if self.riot:
-            game_name = nome_limpo
-            tag_line = ""
-            if "#" in nome:
-                parts = nome.split("#", 1)
-                game_name = parts[0].strip()
-                tag_line = parts[1].strip()
-            # Tenta account endpoint primeiro (mais confiavel)
-            if tag_line:
-                account = self.riot.get_account_by_riot_id(game_name, tag_line)
-                if account:
-                    puuid = account.get("puuid")
-            # Fallback: busca por summoner name
-            if not puuid:
-                nome_encoded = urllib.parse.quote(game_name)
-                summ = self.riot.get_summoner_by_name(nome_encoded)
-                if summ:
-                    puuid = summ.get("puuid")
+        game_name = nome_limpo
+        tag_line = ""
+        if "#" in nome:
+            parts = nome.split("#", 1)
+            game_name = parts[0].strip()
+            tag_line = parts[1].strip()
+
+        # 1: Account endpoint com tagline do nome
+        if self.riot and tag_line:
+            acc = self.riot.get_account_by_riot_id(game_name, tag_line)
+            if acc: puuid = acc.get("puuid")
+
+        # 2: Account endpoint com BR1 (fallback)
+        if not puuid and self.riot:
+            for tl in ["BR1", "br1", "jsc", "5083", "LAS", "NA1"]:
+                if tl != tag_line:
+                    acc = self.riot.get_account_by_riot_id(game_name, tl)
+                    if acc: puuid = acc.get("puuid"); break
+
+        # 3: Summoner by name (API antiga)
+        if not puuid and self.riot:
+            s = self.riot.get_summoner_by_name(urllib.parse.quote(game_name))
+            if s: puuid = s.get("puuid")
+
+        # 4: Banco local por nome aproximado
+        if not puuid and self.db:
+            for sus in self.db.get_all_suspects():
+                if game_name.lower() in sus["summoner_name"].lower():
+                    puuid = sus["puuid"]; break
+
+        # 5: Tenta lowercase + encoding alternativo
+        if not puuid and self.riot:
+            try:
+                s2 = self.riot.get_summoner_by_name(urllib.parse.quote(game_name.lower()))
+                if s2: puuid = s2.get("puuid")
+            except: pass
 
         if not puuid:
             return resultado_padrao
