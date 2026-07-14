@@ -1,0 +1,189 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║   ████████╗███████╗████████╗███████╗██╗     ██╗    ██╗ █████╗ ██╗   ██╗ ║
+║   ╚══██╔══╝██╔════╝╚══██╔══╝██╔════╝██║     ██║    ██║██╔══██╗╚██╗ ██╔╝ ║
+║      ██║   █████╗     ██║   █████╗  ██║     ██║ █╗ ██║███████║ ╚████╔╝  ║
+║      ██║   ██╔══╝     ██║   ██╔══╝  ██║     ██║███╗██║██╔══██║  ╚██╔╝   ║
+║      ██║   ██║        ██║   ██║     ██║     ╚███╔███╔╝██║  ██║   ██║    ║
+║      ╚═╝   ╚═╝        ╚═╝   ╚═╝     ╚═╝      ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝    ║
+║                                                                          ║
+║   🛡️  TFTFlyway — Sistema Anti-Cheat para Teamfight Tactics           ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+================================================================================
+TUTORIAL COMPLETO - COMO USAR O TFTFLYWAY
+================================================================================
+
+O TFTFlyway é um sistema automático que detecta hackers no TFT enquanto
+você joga. Ele conecta no cliente do League of Legends (LCU), na API ao
+vivo (Live API) e na API da Riot para analisar jogadores em tempo real.
+
+================================================================================
+1. INSTALAÇÃO (primeira vez)
+================================================================================
+
+  1.1. Abra o terminal na pasta do projeto:
+       cd F:\Projestos_IA_DeepS_BootStrap5CDN\Github_copilot
+
+  1.2. Instale as dependências:
+       pip install -r requirements.txt
+
+  1.3. Configure o .env (já está configurado):
+       - RIOT_ID=oO0Jx0Oo        ← seu Riot ID
+       - TAGLINE=jsc              ← sua tagline
+       - RIOT_API_KEY=RGAPI-...   ← chave da API Riot
+       - RIOT_DEV_USER=...        ← email do portal Riot
+       - RIOT_DEV_PASS=...        ← senha do portal Riot
+
+  1.4. Ative a Live API nas config do LoL (uma vez):
+       Configurações → Jogo →
+       ✅ Habilitar API de Dados do Cliente ao Vivo
+
+================================================================================
+2. COMO USAR NO DIA A DIA
+================================================================================
+
+  ⚡ PASSO 1: Abra o League of Legends e entre no cliente
+
+  ⚡ PASSO 2: Inicie o monitor automático:
+       python -u monitor.py
+
+  ⚡ PASSO 3: O sistema faz tudo sozinho:
+       • Aguarda você entrar em um lobby
+       • Faz pré-scan dos jogadores automaticamente
+       • Se detectar hacker conhecido → AUTO-DODGE (sai da fila)
+       • Se a partida começar → monitora todos os jogadores
+       • Quando a partida acabar → mostra resultado
+
+  ⚡ PASSO 4: Jogue normalmente!
+       O sistema roda em segundo plano.
+
+================================================================================
+3. COMANDOS MANUAIS (se quiser)
+================================================================================
+
+  ANTES DA PARTIDA:
+  ──────────────────────────────────────────────────────────────────────────────
+  python main.py prescan        🔍  Escaneia o lobby atual
+  python main.py autododge      🚨  Escaneia e sai se tiver hacker
+
+  DURANTE A PARTIDA:
+  ──────────────────────────────────────────────────────────────────────────────
+  python main.py players        👥  Mostra jogadores com gold, level
+  python main.py track          🎯  Rastreia comportamentos suspeitos
+
+  APÓS A PARTIDA:
+  ──────────────────────────────────────────────────────────────────────────────
+  python main.py blacklist      📋  Lista negra de hackers confirmados
+  python main.py evidence <nome> 📋  Gera relatório para report à Riot
+  python main.py report         📊  Relatório completo da sessão
+  python main.py dashboard      🌐  Abre dashboard web (gráficos)
+
+================================================================================
+4. SOBRE O DASHBOARD WEB (web/index.html)
+================================================================================
+
+  O dashboard é uma página HTML que mostra gráficos e tabelas com os dados
+  do banco de suspeitos. Ele usa Bootstrap 5 e Chart.js.
+
+  🔸 NÃO precisa ficar rodando constante!
+  🔸 Só abra quando quiser ver os dados:
+       python main.py dashboard
+       → Abre em: http://localhost:8000
+
+  🔸 Dica: pode deixar rodando em segundo plano (abre o navegador sozinho)
+  🔸 Atualiza automaticamente a cada 15 segundos
+
+================================================================================
+5. ENTENDENDO O SISTEMA
+================================================================================
+
+  COMUNICAÇÃO COM O LOL:
+  ──────────────────────────────────────────────────────────────────────────────
+  O sistema usa 3 canais de comunicação:
+
+  1. LCU (League Client) → porta dinâmica via lockfile
+     • Lê fase do jogo (Lobby, InGame, etc)
+     • Obtém summoner name e PUUID
+     • Faz DODGE (sai do lobby) via comando LCU
+
+  2. Live API → porta 2999 (durante a partida)
+     • Lista de jogadores na partida
+     • Gold, level, itens em tempo real
+
+  3. Riot API → externa (requer chave)
+     • Histórico de partidas
+     • Busca de PUUID por nome
+     • Análise de 3★, win rate, etc
+
+  DETECÇÃO DE HACKERS:
+  ──────────────────────────────────────────────────────────────────────────────
+  O sistema calcula um SCORE de 0 a 100 baseado em:
+
+  •  3★ em uma partida (3+ = hacker certo) → peso alto 🚨
+  •  Média de 3★ por partida
+  •  Win rate anormal
+  •  APM (ações por minuto) robótico
+  •  Tempo de reação impossível
+  •  Consistência perfeita (humano erra)
+  •  Smurf detection (conta nova, win rate alto)
+
+  Níveis: BAIXO 0-39 → MÉDIO 40-59 → ALTO 60-79 → CRÍTICO 80+
+
+  FLUXO COMPLETO:
+  ──────────────────────────────────────────────────────────────────────────────
+  1. Você entra no lobby
+  2. Sistema faz PRESCAN → busca cada jogador no banco + API
+  3. Se achar HACKER → AUTO-DODGE + gera evidências
+  4. Partida começa → MONITORA todos os jogadores
+  5. Partida termina → mostra resultado
+  6. Hackers ficam na LISTA NEGRA pra sempre evitados
+
+================================================================================
+6. ARQUIVOS DO PROJETO
+================================================================================
+
+  📁 core/                  → Módulos de conexão
+  📁 detector/              → Motor de detecção + banco de dados
+  📁 analytics/             → Métricas e relatórios de evidência
+  📁 web/                   → Dashboard web (Bootstrap 5)
+  📁 data/                  → Banco SQLite + evidências geradas
+  📁 data/evidence/         → Relatórios de evidências (report à Riot)
+
+  📄 main.py                → Programa principal (comandos)
+  📄 monitor.py             → Modo automático em background
+  📄 requirements.txt       → Dependências Python
+  📄 .env                   → Configurações (NÃO COMMITAR)
+
+================================================================================
+7. DICAS IMPORTANTES
+================================================================================
+
+  • A API Key da Riot expira em 24h (desenvolvimento)
+  • Para não precisar renovar: o app TFTflyway está AGUARDANDO APROVAÇÃO
+  • Se a chave expirar, pegue outra em: https://developer.riotgames.com/
+  • O .env NÃO vai pro GitHub (está no .gitignore) 🔒
+  • O banco suspects.db guarda o histórico de hackers encontrados
+  • Evidências ficam em data/evidence/ para anexar no ticket da Riot
+
+================================================================================
+8. SUBIR PARA O GITHUB
+================================================================================
+
+  Para publicar o projeto no GitHub:
+
+  1. Crie o repositório no site:
+     https://github.com/new → nome: TFTFlyway (público, sem README)
+
+  2. No terminal:
+     git remote add origin https://github.com/10jsc/TFTFlyway.git
+     git push -u origin master
+
+  3. Pronto! O código está no GitHub sem credenciais (seguro ✅)
+
+================================================================================
+  🛡️  TFTFlyway v1.0 — Anti-Cheat para TFT
+  👤  Johnatan Silva Costa (Titanjsc / oO0Jx0Oo#jsc)
+  🌐  https://10jsc.github.io/
+================================================================================
