@@ -84,6 +84,19 @@ class LCUBridge:
                     return phase
             time.sleep(interval)
 
+    def leave_lobby(self) -> bool:
+        """Dodge: sai do lobby atual para evitar hacker na sala."""
+        try:
+            if not self._connected:
+                return False
+            r = self.session.post(
+                f"https://127.0.0.1:{self.port}/lol-lobby/v2/lobby/leave",
+                timeout=3
+            )
+            return r.status_code in (200, 201, 204)
+        except Exception:
+            return False
+
     # ----------------------------------------------------------------
     def _get(self, endpoint: str) -> Any:
         if not self._connected:

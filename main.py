@@ -359,6 +359,17 @@ class TFTFlyway:
                                 print(f"{C.R}{'🔴'*25}{C.RESET}")
                                 for a in resultado["alertas"]:
                                     print(f"   {C.R}{a}{C.RESET}")
+                                print(f"   {C.R}Aplicando auto-dodge...{C.RESET}")
+                                if self.lcu.leave_lobby():
+                                    print(f"   {C.G}✅ Dodge realizado!{C.RESET}")
+                                    for p in resultado["jogadores"]:
+                                        if p["is_hacker"] and p["puuid"] and self.db:
+                                            self.db.add_or_update_suspect(
+                                                p["puuid"], p["player"], "",
+                                                p["score"], p["nivel"], True
+                                            )
+                                else:
+                                    print(f"   {C.R}❌ Falha no dodge!{C.RESET}")
                             elif resultado["alertas"]:
                                 print(f"\n{C.Y}⚠️ Suspeitos:{C.RESET}")
                                 for a in resultado["alertas"]:
@@ -563,6 +574,42 @@ class TFTFlyway:
             print(f"   Porta: {gp.get('SERVER_PORT', '?')}")
             print(f"   GameID: {gp.get('GameID', '?')}")
 
+    def cmd_autododge(self, args=""):
+        """🚨 AUTO-DODGE: Escaneia lobby e sai se detectar hacker."""
+        if not self.lcu.connected:
+            print(f"{C.Y}⚠️ LCU nao conectado.{C.RESET}")
+            return
+
+        fase = self.lcu.get_gameflow_phase()
+        if fase not in ("Lobby", "Matchmaking", "ReadyCheck"):
+            print(f"{C.Y}⚠️ Nao esta em lobby (fase: {fase}).{C.RESET}")
+            return
+
+        print(f"\n{C.BOLD}{C.R}🚨 AUTO-DODGE{C.RESET}")
+        jogadores = self.lcu.get_player_list()
+        nomes = [j.get("summonerName", "?") for j in jogadores]
+        print(f"   👥 Escaneando {len(nomes)} jogadores...")
+
+        resultado = self.detector.prescan_lobby(nomes)
+        if resultado["hacker_encontrado"]:
+            print(f"\n{C.R}🚨 HACKER! Aplicando DODGE...{C.RESET}")
+            for a in resultado["alertas"]:
+                print(f"   {C.R}{a}{C.RESET}")
+            if self.lcu.leave_lobby():
+                print(f"\n{C.G}✅ Dodge realizado! Saindo do lobby.{C.RESET}")
+                for p in resultado["jogadores"]:
+                    if p["is_hacker"] and p["puuid"] and self.db:
+                        self.db.add_or_update_suspect(
+                            p["puuid"], p["player"], "",
+                            p["score"], p["nivel"], True
+                        )
+                print(f"   💾 Hackers registrados na lista negra!")
+            else:
+                print(f"\n{C.R}❌ Falha ao sair. Saia manualmente!{C.RESET}")
+        else:
+            print(f"\n{C.G}✅ Nenhum hacker. Sala segura!{C.RESET}")
+        print()
+
     def cmd_players(self, args=""):
         """Mostra jogadores na partida com dados ao vivo."""
         if not self.live.available:
@@ -630,7 +677,8 @@ class TFTFlyway:
 {'═' * 50}
 {C.BOLD}Anti-Cheat / Detecção:{C.RESET}
   {C.G}scan{C.RESET}                          Escaneia jogadores na sala atual
-  {C.G}prescan{C.RESET}                       🔍 PRÉ-SCAN do lobby (antes da partida)
+  {C.G}prescan{C.RESET}                       🔍 PRÉ-SCAN do lobby
+  {C.G}autododge{C.RESET}                     🚨 Auto-dodge se detectar hacker
   {C.G}monitor [N]{C.RESET}                   Monitoramento contínuo (N=intervalo)
   {C.G}auto [N]{C.RESET}                      🤖 Modo automático (detecta partida)
   {C.G}search <nome>{C.RESET}                 Analisa um jogador específico

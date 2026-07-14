@@ -255,6 +255,14 @@ class SuspectDetector:
                 metricas["media_3star"] = s
                 razoes.append(f"📊 Média 3★: {ms:.1f} (limite: {self.THRESHOLD_3STAR})")
 
+            # 1b. 3★ MAXIMO em UMA partida (>3 = HACKER)
+            max_3 = historico.get("max_3star", 0)
+            if max_3 >= 3:
+                s = min(100, 60 + (max_3 - 3) * 15)
+                score_total += s * (self.PESOS["media_3star"] / 100)
+                metricas["max_3star"] = s
+                razoes.append(f"🚨 {max_3} campeoes 3★ em UMA partida! (HACKER)")
+
             # 2. Top4 rate
             top4 = historico["top4_rate"]
             if top4 >= self.THRESHOLD_TOP4:
