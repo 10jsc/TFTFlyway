@@ -35,6 +35,7 @@ from detector.database import SuspectDatabase
 from detector.suspect_detector import SuspectDetector
 from detector.player_tracker import PlayerTracker
 from analytics.metrics import MetricsEngine
+from analytics.evidence import EvidenceReport
 
 # Cores
 class C:
@@ -63,6 +64,7 @@ class TFTFlyway:
         self.detector = SuspectDetector(database=self.db)
         self.player_tracker = PlayerTracker(live_api=self.live)
         self.metrics = MetricsEngine(database=self.db)
+        self.evidence = EvidenceReport(database=self.db)
 
         # Estado
         self.running = True
@@ -368,6 +370,8 @@ class TFTFlyway:
                                                 p["puuid"], p["player"], "",
                                                 p["score"], p["nivel"], True
                                             )
+                                            self.evidence.generate(p)
+                                    print(f"   📋 Evidencias salvas")
                                 else:
                                     print(f"   {C.R}❌ Falha no dodge!{C.RESET}")
                             elif resultado["alertas"]:
@@ -603,7 +607,9 @@ class TFTFlyway:
                             p["puuid"], p["player"], "",
                             p["score"], p["nivel"], True
                         )
+                        self.evidence.generate(p)
                 print(f"   💾 Hackers registrados na lista negra!")
+                print(f"   📋 Evidencias salvas")
             else:
                 print(f"\n{C.R}❌ Falha ao sair. Saia manualmente!{C.RESET}")
         else:
@@ -692,6 +698,7 @@ class TFTFlyway:
 
 {C.BOLD}Dados:{C.RESET}
   {C.G}report{C.RESET}                        Relatório da sessão
+  {C.G}evidence [nome]{C.RESET}               📋 Evidências para report Riot
   {C.G}dashboard [porta]{C.RESET}             Abre dashboard web (default: 8000)
   {C.G}export{C.RESET}                        Exporta dados para JSON
 
@@ -719,6 +726,30 @@ class TFTFlyway:
         """Exporta dados."""
         path = self.metrics.export_json()
         print(f"{C.G}✅ Dados exportados para: {path}{C.RESET}")
+
+    def cmd_evidence(self, args=""):
+        """📋 Gera relatorio de evidencias para report a Riot."""
+        if not args:
+            lista = self.evidence.list_evidence()
+            if lista:
+                print(f"\n{C.BOLD}{C.CY}📋 Evidencias existentes:{C.RESET}")
+                for e in lista:
+                    print(f"   • {e['jogador']} (score: {e['score']}) - {e['arquivo']}")
+                print(f"   Pasta: {self.evidence.output_dir}")
+            else:
+                print(f"\n{C.Y}⚠️ Nenhuma evidencia. Use: evidence <jogador>{C.RESET}")
+            return
+
+        print(f"\n{C.BOLD}{C.M}📋 Gerando evidencias: {args}{C.RESET}")
+        resultado = self.detector.escanear_jogador(args)
+        if resultado.get("error"):
+            print(f"{C.R}❌ Falha ao analisar.{C.RESET}")
+            return
+        caminho = self.evidence.generate(resultado)
+        print(f"{C.G}✅ Evidencias: {caminho}{C.RESET}")
+        print(f"   1. https://support.riotgames.com/hc/pt-br")
+        print(f"   2. Reportar Jogador → {args}")
+        print(f"   3. Anexe o arquivo")
 
     # ----------------------------------------------------------------
     # MENU INTERATIVO
