@@ -142,16 +142,15 @@ class TFTFlyway:
 
     def _setup_riot_api(self):
         """Configura API Key da Riot com renovacao automatica."""
-        # Tenta chave do gerenciador (config.json ou .env)
         self.api_key = self.api_key_mgr.key or self.config.get("riot_api_key", "")
 
         if not self.api_key:
-            print(f"\n{C.Y}⚠️ Riot API Key necessária!{C.RESET}")
-            manual = input(f"   🔑 Digite a API Key (Enter para renovar automaticamente): ").strip()
-            if manual:
-                self.api_key = manual
-            else:
-                print(f"   {C.D}Iniciando renovacao automatica...{C.RESET}")
+            if sys.stdin.isatty():
+                print(f"\n{C.Y}⚠️ Riot API Key necessária!{C.RESET}")
+                manual = input(f"   🔑 Digite (Enter p/ renovar): ").strip()
+                if manual:
+                    self.api_key = manual
+            print(f"   {C.D}Renovando chave...{C.RESET}")
 
         if self.api_key:
             self.api_key_mgr.key = self.api_key
@@ -173,7 +172,7 @@ class TFTFlyway:
                 self.meu_puuid = account.get("puuid", "")
                 self.detector.set_me(game_name, self.meu_puuid)
         else:
-            print(f"   {C.Y}⚠️ API Key inválida/expirada. Tentando renovar...{C.RESET}")
+            print(f"   {C.Y}⚠️ API Key inválida. Renovando...{C.RESET}")
             if self.api_key_mgr.renew():
                 self.api_key = self.api_key_mgr.key
                 self.riot = RiotAPI(self.api_key)

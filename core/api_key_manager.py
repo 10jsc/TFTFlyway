@@ -45,7 +45,12 @@ class APIKeyManager:
             for line in self.env_file.read_text().splitlines():
                 if "=" in line:
                     k, v = line.strip().split("=", 1)
-                    creds[k.lower()] = v
+                    kl = k.lower()
+                    creds[kl] = v
+                    if kl == "riot_dev_user":
+                        creds["username"] = v
+                    elif kl == "riot_dev_pass":
+                        creds["password"] = v
         return creds
 
     # ----------------------------------------------------------------
