@@ -366,13 +366,26 @@ class SuspectDetector:
             resultado_padrao["razoes"] = ["Próprio jogador"]
             return resultado_padrao
 
-        # Busca PUUID via API
+        # Busca PUUID via API (Riot ID completo: Nome#Tag)
         puuid = None
         if self.riot:
-            nome_encoded = urllib.parse.quote(nome_limpo)
-            summ = self.riot.get_summoner_by_name(nome_encoded)
-            if summ:
-                puuid = summ.get("puuid")
+            game_name = nome_limpo
+            tag_line = ""
+            if "#" in nome:
+                parts = nome.split("#", 1)
+                game_name = parts[0].strip()
+                tag_line = parts[1].strip()
+            # Tenta account endpoint primeiro (mais confiavel)
+            if tag_line:
+                account = self.riot.get_account_by_riot_id(game_name, tag_line)
+                if account:
+                    puuid = account.get("puuid")
+            # Fallback: busca por summoner name
+            if not puuid:
+                nome_encoded = urllib.parse.quote(game_name)
+                summ = self.riot.get_summoner_by_name(nome_encoded)
+                if summ:
+                    puuid = summ.get("puuid")
 
         if not puuid:
             return resultado_padrao
@@ -445,6 +458,15 @@ class SuspectDetector:
                 try:
                     summ = self.riot.get_summoner_by_name(urllib.parse.quote(nome))
                     puuid = summ.get("puuid") if summ else None
+                except:
+                    pass
+            if not puuid and "#" in nome_raw and self.riot:
+                try:
+                    parts = nome_raw.split("#", 1)
+                    gn, tl = parts[0].strip(), parts[1].strip()
+                    acc = self.riot.get_account_by_riot_id(gn, tl)
+                    if acc:
+                        puuid = acc.get("puuid")
                 except:
                     pass
 
