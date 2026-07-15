@@ -493,6 +493,18 @@ class TFTFlyway:
         else:
             self._print_resultado(args, resultado)
 
+    def cmd_report(self, args=""):
+        if not args:
+            print(f"{C.Y}Uso: report <nome>{C.RESET}")
+            return
+        nome = args.strip()
+        print(f"{C.R}🚨 Reportando hacker: {nome}{C.RESET}")
+        res = self.detector.escanear_jogador(nome)
+        puuid = res.get("puuid") if not res.get("error") else None
+        if self.db:
+            self.db.add_or_update_suspect(puuid or f"man_{nome}", nome, "", 90.0, "CRITICO", True)
+            print(f"{C.G}✅ {nome} registrado como HACKER! Score 90{C.RESET}")
+
     # ----------------------------------------------------------------
     # NOVOS COMANDOS
     # ----------------------------------------------------------------
@@ -684,6 +696,7 @@ class TFTFlyway:
 {C.BOLD}Anti-Cheat / Detecção:{C.RESET}
   {C.G}scan{C.RESET}                          Escaneia jogadores na sala atual
   {C.G}prescan{C.RESET}                       🔍 PRÉ-SCAN do lobby
+  {C.G}report <nome>{C.RESET}                 🚨 Reportar hacker que voce viu
   {C.G}autododge{C.RESET}                     🚨 Auto-dodge se detectar hacker
   {C.G}monitor [N]{C.RESET}                   Monitoramento contínuo (N=intervalo)
   {C.G}auto [N]{C.RESET}                      🤖 Modo automático (detecta partida)
