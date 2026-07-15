@@ -1,139 +1,198 @@
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║                                                                          ║
-║   🛡️  TFTFlyway — Anti-Cheat para Teamfight Tactics                   ║
+║   🛡️  TFTFlyway — Anti-Cheat para TFT                                 ║
 ║                                                                          ║
-║   Localiza, cataloga e te afasta de cheaters, crackers e hackers.       ║
-║   Sistema legal e dentro das politicas da Riot Games.                   ║
+║   Localiza, cataloga e te afasta de hackers e trapaceiros!             ║
+║   𝗦𝗶𝘀𝘁𝗲𝗺𝗮 𝗹𝗲𝗴𝗮𝗹 𝗲 𝗱𝗲𝗻𝘁𝗿𝗼 𝗱𝗮𝘀 𝗿𝗲𝗴𝗿𝗮𝘀 𝗱𝗮 𝗥𝗶𝗼𝘁! ✅                          ║
 ║                                                                          ║
-║   Desenvolvido por 10JSC (https://github.com/10jsc)                     ║
+║   Criado por 10JSC 👑                                                    ║
+║   https://github.com/10jsc                                              ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
 ================================================================================
-COMO USAR O TFTFLYWAY
+📌 RESUMO (se tiver preguiça de ler tudo)
 ================================================================================
 
-O TFTFlyway conecta no seu League of Legends e analisa os jogadores
-em tempo real para detectar hackers, smurfs e comportamentos suspeitos.
+  1️⃣ Baixe o projeto do GitHub
+  2️⃣ pip install -r requirements.txt  (só na primeira vez)
+  3️⃣ Crie o arquivo .env com seus dados (modelo abaixo)
+  4️⃣ Abra o LOL
+  5️⃣ Dê 2 cliques no  iniciar_monitor.bat
+  6️⃣ Jogue! O sistema faz tudo sozinho 🤖
 
 ================================================================================
-1. INSTALAÇÃO (primeira vez)
+1️⃣ INSTALAÇÃO (primeira vez - leia isso)
 ================================================================================
 
-  1.1. Abra o terminal na pasta do projeto (onde voce baixou/extraiu)
+  🎯 Antes de começar, você precisa de 3 coisas:
 
-  1.2. Instale as dependencias:
-       pip install -r requirements.txt
+  A) Python instalado (https://python.org)
+  B) League of Legends instalado
+  C) Uma chave de API da Riot (explico como pegar)
 
-  1.3. Crie o arquivo .env na pasta do projeto com suas informacoes:
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
 
-       Copie e cole isso no bloco de notas e salve como .env:
+  📥 PASSO 1: Baixe o projeto
+  Vá em https://github.com/10jsc/TFTFlyway
+  Clique em  Code ▼  →  Download ZIP
+  Extraia a pasta no seu computador
 
-       RIOT_ID=seu_nome_de_invocador
-       TAGLINE=suatag
-       RIOT_API_KEY=RGAPI-sua_chave_aqui
-       RIOT_DEV_USER=seu_email_do_portal_riot
-       RIOT_DEV_PASS=sua_senha_do_portal_riot
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
 
-       Onde conseguir cada coisa:
-       - RIOT_ID / TAGLINE: seu nome no LoL (ex: Jogador#BR1)
-       - RIOT_API_KEY: https://developer.riotgames.com/ (gerar chave)
-       - RIOT_DEV_USER/PASS: login do site acima (opcional)
+  📦 PASSO 2: Instalar dependências
 
-  1.4. Ative a Live API nas configuracoes do LoL (uma vez):
-       Configuracoes → Jogo → Habilitar API de Dados do Cliente ao Vivo
+  Abra o terminal na pasta do projeto e digite:
+
+     pip install -r requirements.txt
+
+  (Se der erro, tente: python -m pip install -r requirements.txt)
+
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+  🔑 PASSO 3: Criar arquivo .env (suas configurações)
+
+  Crie um arquivo chamado .env na pasta do projeto.
+  Abra ele no bloco de notas e cole isso:
+
+     RIOT_ID=seu_nick_aqui
+     TAGLINE=suatag
+     RIOT_API_KEY=RGAPI-sua_chave_aqui
+
+  Onde achar cada coisa:
+  • RIOT_ID = Seu nome de invocador (ex: oO0Jx0Oo)
+  • TAGLINE = O que vem depois do # (ex: BR1, jsc, 1234)
+  • RIOT_API_KEY = Pega em https://developer.riotgames.com/ (cria conta, gera chave)
+
+  Dica: A chave expira em 24h. Quando expirar, volta lá e gera outra 🤷
+
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+  ⚙️ PASSO 4: Ativar Live API (se não funcionar automático)
+
+  Configurações do LOL → Jogo →
+  "Habilitar API de Dados do Cliente ao Vivo" ✅
+
+  Obs: Nas versões atuais já vem ativo. Só verifica se não funcionar.
 
 ================================================================================
-2. USO DIARIO (3 passos)
+2️⃣ USAR NO DIA A DIA (é rapidinho)
 ================================================================================
 
-  ⚡ PASSO 1: Abra o League of Legends
+   🟢 PASSO 1: Abre o League of Legends
 
-  ⚡ PASSO 2: Inicie o monitor automatico:
+   🟢 PASSO 2: Dá 2 cliques no arquivo  iniciar_monitor.bat
 
-       Duplo clique em:  iniciar_monitor.bat
+   🟢 PASSO 3: Entra na fila e JOOOGA! 🎮
 
-       Ou pelo terminal: python -u monitor.py
+   👇 O sistema faz ISSO TUDO SOZINHO:
 
-  ⚡ PASSO 3: Jogue normalmente!
-
-       O sistema faz TUDO sozinho em segundo plano:
-
-       • Aguarda voce entrar no lobby
-       • Escaneia os jogadores automaticamente
-       • Se detectar hacker → sai da fila (AUTO-DODGE)
-       • Se a partida comecar → monitora todo mundo
-       • Quando acabar → mostra o resultado
-       • Hackers vao para a LISTA NEGRA
+   🤖 Entrou no lobby?   → Escaneia todo mundo automaticamente
+   🚨 Achou um hacker?   → Sai da fila pra você (auto-dodge)
+   👁️ Partida começou?   → Monitora os 8 jogadores
+   ✅ Partida acabou?    → Mostra se tava limpa ou tinham hackers
+   📋 Achou hacker?      → Salva na lista negra pra nunca mais cair com ele!
 
 ================================================================================
-3. COMANDOS EXTRAS
+3️⃣ COMANDOS MANUAIS (pra quem quer mais controle)
 ================================================================================
 
-  ANTES DA PARTIDA:
-     python main.py prescan        🔍 Escaneia o lobby agora
+  ⏰ ANTES DA PARTIDA:
+     python main.py prescan        🔍 Escaneia o lobby na hora
      python main.py autododge      🚨 Escaneia e sai se tiver hacker
 
-  DURANTE A PARTIDA:
-     python main.py players        👥 Mostra gold, level dos jogadores
-     python main.py track          🎯 Rastreia comportamentos suspeitos
+  🎮 DURANTE A PARTIDA (abre outro terminal):
+     python main.py players        👥 Mostra gold e level de todos
+     python main.py track          🎯 Rastreia suspeitos ao vivo
 
-  DEPOIS DA PARTIDA:
-     python main.py blacklist      📋 Lista negra de hackers
-     python main.py evidence       📋 Gera relatorio para report a Riot
-     python main.py dashboard      🌐 Abre painel web com graficos
+  📊 DEPOIS DA PARTIDA:
+     python main.py report "Jogador"  🚨 Marca um hacker que você viu
+     python main.py blacklist         📋 Mostra lista de hackers
+     python main.py evidence "Jogador" 📋 Gera provas pra denunciar
+     python main.py dashboard         🌐 Abre site com gráficos
 
 ================================================================================
-4. SOBRE O DASHBOARD WEB
+4️⃣ DASHBOARD WEB (gráficos bonitinhos 📊)
 ================================================================================
 
-  O dashboard (web/index.html) mostra graficos e tabela de suspeitos.
-  Nao precisa ficar rodando sempre - so abra quando quiser ver:
+  Quer ver os dados em gráfico? Abre outro terminal e digita:
 
      python main.py dashboard
-     → Abre em: http://localhost:8000
+
+  Depois abre o navegador em:
+     http://localhost:8000
+
+  Lá mostra:
+  • Quantos hackers você encontrou
+  • Score de cada jogador
+  • Gráficos de distribuição
+  • Tabela com todos os suspeitos
 
 ================================================================================
-5. ENTENDA A DETECCAO
+5️⃣ COMO O SISTEMA DETECTA HACKERS
 ================================================================================
 
-  O sistema da um SCORE de 0 a 100 para cada jogador:
+  O sistema dá uma nota de 0 a 100 pra cada jogador:
 
-  0-39  BAIXO    → Jogador normal
-  40-59 MEDIO    → Possivel suspeito
-  60-79 ALTO     → Provavel hacker 🟠
-  80+   CRITICO  → Hacker confirmado 🔴
+  0-39  🟢 BAIXO    → Normal
+  40-59 🟡 MÉDIO    → Talvez suspeito
+  60-79 🟠 ALTO     → Quase certeza que é hacker
+  80+   🔴 CRÍTICO  → HACKER CONFIRMADO
 
-  O que aumenta o score:
-  • 3 ou mais campeoes 3★ em 1 partida (impossivel = hacker)
-  • Win rate muito alto
-  • APM (acoes por minuto) roboticos
-  • Tempo de reacao perfeito (humano erra)
-  • Conta nova com performance alta (smurf)
+  O que FAZ a nota subir:
 
-================================================================================
-6. ARQUIVOS DO PROJETO
-================================================================================
-
-  📁 core/           → Conexoes com LoL e Riot
-  📁 detector/       → Deteccao de hackers + banco de dados
-  📁 analytics/      → Relatorios e evidencias
-  📁 web/            → Dashboard web
-  📄 main.py         → Programa principal
-  📄 monitor.py      -> Modo automatico
-  📄 .env            → SUAS configuracoes (criar manualmente)
+  ⭐ 4 campeões 3 estrelas em 1 partida? → HACKER (100%)
+  ⭐ 3 campeões 3 estrelas em conta nova? → HACKER
+  📈 Win rate muito alto? → Suspeito
+  🤖 Ações robóticas (APM alto)? → Suspeito
+  🎯 Tempo de reação perfeito? → Suspeito
+  👶 Conta nova jogando igual pro? → Smurf/hacker
 
 ================================================================================
-7. DICAS
+6️⃣ ARQUIVOS DO PROJETO (o que é cada coisa)
 ================================================================================
 
-  • A chave da Riot (API Key) expira em 24h
-  • Para renovar: https://developer.riotgames.com/
-  • O .env voce cria na instalacao - ele nao vem no GitHub
-  • O banco de dados guarda os hackers que voce encontrou
-  • Evidencias ficam em data/evidence/ para report a Riot
+  📁 core/        → Conexões com o LOL e Riot
+  📁 detector/    → Detecta hackers + banco de dados
+  📁 analytics/   → Gera relatórios e provas
+  📁 web/         → Dashboard com gráficos
+  📁 data/        → Banco de dados e evidências (gerado automaticamente)
+
+  📄 main.py      → Programa principal (comandos manuais)
+  📄 monitor.py   → Modo automático (só rodar e jogar)
+  📄 .env         → SUAS CONFIGURAÇÕES (criar manualmente)
 
 ================================================================================
-  🛡️  TFTFlyway v1.0
-  👤  10JSC (https://github.com/10jsc)
+7️⃣ DICAS E DUVIDAS COMUNS
+================================================================================
+
+  ❓ "O que é API Key?"
+     É uma senha que a Riot te dá pra acessar dados do jogo.
+     Pega em: https://developer.riotgames.com/
+     Expira em 24h, mas é grátis e você gera outra rapidinho.
+
+  ❓ "Precisa instalar algo?"
+     Python + pip install -r requirements.txt
+
+  ❓ "Vou ser banido?"
+     Não! O sistema só LE dados do jogo, não modifica nada.
+     É legal e permitido pela Riot ✅
+
+  ❓ "O sistema fecha sozinho?"
+     Não, deixa ele rodando em segundo plano enquanto joga.
+
+  ❓ "O que é .env?"
+     Um arquivo de configuração com suas informações.
+     O .env NÃO vai pro GitHub (ninguém vê sua senha) 🔒
+
+  ❓ "Deu erro 'pip not found'?"
+     Tenta: python -m pip install -r requirements.txt
+
+  ❓ "Deu erro 'Python not found'?"
+     Baixa em: https://python.org (marca "Add to PATH" na instalação)
+
+================================================================================
+  🛡️  TFTFlyway — Feito por 10JSC
+  🌐  https://github.com/10jsc
+  🎮  Boas partidas e sem hackers! 🔥
 ================================================================================
