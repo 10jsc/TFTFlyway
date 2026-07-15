@@ -370,7 +370,13 @@ class TFTFlyway:
                                                 p["puuid"], p["player"], "",
                                                 p["score"], p["nivel"], True
                                             )
-                                            self.evidence.generate(p)
+                                            self.evidence.generate({
+                                                "player": p["player"], "puuid": p["puuid"],
+                                                "score_total": p["score"], "nivel": p["nivel"],
+                                                "is_hacker": True,
+                                                "razoes": [f"Prescan lobby - Score: {p['score']}"],
+                                                "metricas": {}, "detalhes_comportamento": {}, "historico": {}
+                                            })
                                     print(f"   📋 Evidencias salvas")
                                 else:
                                     print(f"   {C.R}❌ Falha no dodge!{C.RESET}")
@@ -619,7 +625,13 @@ class TFTFlyway:
                             p["puuid"], p["player"], "",
                             p["score"], p["nivel"], True
                         )
-                        self.evidence.generate(p)
+                        self.evidence.generate({
+                            "player": p["player"], "puuid": p["puuid"],
+                            "score_total": p["score"], "nivel": p["nivel"],
+                            "is_hacker": True,
+                            "razoes": [f"Auto-dodge - Score: {p['score']}"],
+                            "metricas": {}, "detalhes_comportamento": {}, "historico": {}
+                        })
                 print(f"   💾 Hackers registrados na lista negra!")
                 print(f"   📋 Evidencias salvas")
             else:
