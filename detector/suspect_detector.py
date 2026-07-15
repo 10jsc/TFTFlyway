@@ -129,6 +129,11 @@ class SuspectDetector:
         if not match_ids:
             return None
 
+        # Analise comparativa com voce (PRO reference)
+        comparativo = None
+        if self._meu_puuid and puuid != self._meu_puuid:
+            comparativo = self._analisar_comparativo(match_ids, puuid)
+
         resultados = []
         total_3star = 0
         total_top4 = 0
@@ -178,6 +183,9 @@ class SuspectDetector:
             "colocacoes": colocacoes,
             "analisado_em": datetime.now().isoformat()
         }
+
+        if comparativo:
+            dados["comparativo"] = comparativo
 
         # Detecta possível smurf (conta nova com performance alta)
         try:
@@ -242,6 +250,42 @@ class SuspectDetector:
             "consistencia": round(consistencia, 1) if consistencia else None,
             "scores": {"apm": round(score_apm, 1), "reacao": round(score_reacao, 1),
                        "consistencia": round(score_consist, 1)}
+        }
+
+    # ================================================================
+    # ANALISE COMPARATIVA (PRO reference)
+    # ================================================================
+    def _analisar_comparativo(self, match_ids: list, puuid_alvo: str) -> Optional[Dict]:
+        if not self.riot or not self._meu_puuid:
+            return None
+        total, melhor, tres, diff_max, gold_acima = 0, 0, 0, 0, 0
+        for mid in match_ids:
+            match = self.riot.get_match(mid)
+            if not match:
+                continue
+            alvo, eu = None, None
+            for p in match.get("info", {}).get("participants", []):
+                pu = p.get("puuid", "")
+                if pu == puuid_alvo:
+                    alvo = p
+                elif pu == self._meu_puuid:
+                    eu = p
+            if not alvo or not eu:
+                continue
+            total += 1
+            d3 = sum(1 for u in alvo.get("units", []) if u.get("tier") == 3)
+            d3 -= sum(1 for u in eu.get("units", []) if u.get("tier") == 3)
+            if d3 > diff_max:
+                diff_max = d3
+            if d3 >= 2:
+                tres += 1
+            if alvo.get("placement", 99) < eu.get("placement", 99):
+                melhor += 1
+            if alvo.get("gold_left", 0) - eu.get("gold_left", 0) >= 30:
+                gold_acima += 1
+        return None if total == 0 else {
+            "partidas": total, "melhor": melhor,
+            "3star_acima": tres, "max_diff_3star": diff_max, "gold_acima": gold_acima
         }
 
     # ----------------------------------------------------------------
@@ -317,7 +361,22 @@ class SuspectDetector:
                 s = 80  # Smurf forte
                 score_total += s * 0.10  # peso extra
                 metricas["smurf"] = s
-                razoes.append(f"🎭 Possível smurf: {partidas} partidas, {wr:.1f}% win rate")
+                razoes.append(f"Smurf: {partidas} partidas, {wr:.1f}% win rate")
+
+        # 8. Analise comparativa (PRO)
+        comp = historico.get("comparativo") if historico else None
+        if comp:
+            if comp.get("max_diff_3star", 0) >= 2:
+                d = comp["max_diff_3star"]
+                s = min(100, 50 + d * 15)
+                score_total += s * 0.15
+                metricas["pro_3star"] = s
+                razoes.append(f"PRO: +{d} campeoes 3★ acima de voce!")
+            if comp.get("gold_acima", 0) > 0:
+                s = 40
+                score_total += s * 0.10
+                metricas["pro_gold"] = s
+                razoes.append(f"PRO: gold muito acima")
 
         scores_c = comportamento.get("scores", {})
         if scores_c.get("apm", 0) > 0:
