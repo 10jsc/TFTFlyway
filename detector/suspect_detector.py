@@ -313,23 +313,11 @@ class SuspectDetector:
             summoner_lvl = historico.get("summoner_level", 0)
             eh_conta_nova = partidas_total < 20 or summoner_lvl < 50
 
-            if max_3 >= 4:
-                s = 100
+            if max_3 >= 3:
+                s = min(100, 60 + (max_3 - 3) * 15)
                 score_total += s * (self.PESOS["media_3star"] / 100)
                 metricas["max_3star"] = s
-                razoes.append(f"{max_3} campeoes 3★ em 1 partida = HACKER ABSOLUTO")
-
-            elif max_3 == 3:
-                if eh_conta_nova:
-                    s = 85
-                    score_total += s * (self.PESOS["media_3star"] / 100)
-                    metricas["max_3star"] = s
-                    razoes.append(f"3★ em conta nova ({partidas_total} partidas) = HACKER")
-                else:
-                    s = 55
-                    score_total += s * (self.PESOS["media_3star"] / 100)
-                    metricas["max_3star"] = s
-                    razoes.append(f"3 campeoes 3★ em 1 partida (suspeito)")
+                razoes.append(f"{max_3} campeoes 3★ em 1 partida = HACKER")
 
             # 2. Top4 rate
             top4 = historico["top4_rate"]
