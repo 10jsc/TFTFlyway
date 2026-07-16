@@ -340,20 +340,42 @@ document.getElementById('suspects-body').onclick = function(e) {
     if (td.length < 3) return;
     var d = document.getElementById('det-row');
     if (d) d.remove();
+    var nome = td[1].textContent.trim();
+    // Busca dados extras do data.json
+    var extra = '';
+    try {
+        var req = new XMLHttpRequest();
+        req.open('GET', 'data.json?_=' + Date.now(), false);
+        req.send();
+        if (req.status === 200) {
+            var data = JSON.parse(req.responseText);
+            var todos = data.suspeitos || [];
+            for (var i = 0; i < todos.length; i++) {
+                var sn = (todos[i].summoner_name || '').toLowerCase();
+                if (sn === nome.toLowerCase()) {
+                    extra = '<span class="text-secondary small">PUUID: ' + (todos[i].puuid || 'N/A') + '</span><br>' +
+                        '<span class="text-secondary small">Encontros: ' + (todos[i].total_meets || td[5].textContent) +
+                        ' | Score max: ' + (todos[i].max_score || td[2].textContent) +
+                        ' | Nivel max: ' + (todos[i].nivel_max || td[3].textContent) + '</span><br>' +
+                        '<span class="text-secondary small">1a vez: ' + (todos[i].first_seen || '').slice(0,10) +
+                        ' | Ultimo: ' + (todos[i].last_seen || '').slice(0,10) + '</span>';
+                    break;
+                }
+            }
+        }
+    } catch(e) { extra = '<span class="text-secondary">Dados adicionais indisponiveis</span>'; }
+    if (!extra) extra = '<span class="text-secondary">Sem dados extras</span>';
+    
     var row = document.createElement('tr');
     row.id = 'det-row';
     var cel = document.createElement('td');
     cel.colSpan = '8';
     cel.style.cssText = 'background:#1a1d23;padding:12px;border:1px solid #375a7f';
-    cel.innerHTML = '<b>' + td[1].textContent + '</b><br><span class="text-secondary">Score: ' + td[2].textContent +
-        ' | Nivel: ' + td[3].textContent + ' | Status: ' + td[4].textContent +
-        ' | Encontros: ' + td[5].textContent + '</span><br>' +
-        '<span class="text-secondary small">1a vez: ' + (td[6]||{}).textContent + ' | Ultimo: ' + (td[7]||{}).textContent + '</span><br>' +
+    cel.innerHTML = '<b>' + nome + '</b><br>' + extra + '<br>' +
         '<button class="btn btn-sm btn-outline-secondary mt-1" onclick="this.parentElement.parentElement.remove()">Fechar</button>';
     row.appendChild(cel);
     tr.parentNode.insertBefore(row, tr.nextSibling);
-};
-</script>
+};</script>
 
 </body>
 </html>
