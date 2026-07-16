@@ -218,6 +218,36 @@ class SuspectDatabase:
         niveis = ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"]
         return max(a, b, key=lambda x: niveis.index(x) if x in niveis else 0)
 
+    def get_recent_suspects(self, limit_matches: int = 2) -> List[Dict]:
+        """Retorna suspeitos das ultimas N partidas (evita poluicao)."""
+        cur = self.conn.cursor()
+        # Pega datas das ultimas N partidas via metricas
+        cur.execute("SELECT date FROM metrics ORDER BY date DESC LIMIT ?", (limit_matches,))
+        dates = [r[0] for r in cur.fetchall()]
+        if not dates:
+            return self.get_all_suspects()
+        # Busca suspeitos que tiveram encontros nessas datas
+        suspects = []
+        for d in dates:
+            day = d[:10]
+            cur.execute("""
+                SELECT DISTINCT s.* FROM suspects s
+                JOIN encounters e ON e.puuid = s.puuid
+                WHERE e.encounter_date LIKE ?
+            """, (day + '%',))
+            suspects.extend([dict(r) for r in cur.fetchall()])
+        # Se nao tiver encontros, retorna todos (fallback)
+        if not suspects:
+            return self.get_all_suspects()
+        # Remove duplicatas mantendo o mais recente
+        seen = set()
+        unique = []
+        for s in suspects:
+            if s['puuid'] not in seen:
+                seen.add(s['puuid'])
+                unique.append(s)
+        return unique
+
     def close(self):
         self.conn.close()
 

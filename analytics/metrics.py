@@ -65,7 +65,7 @@ class MetricsEngine:
         if not self.db:
             return {}
 
-        suspects = self.db.get_all_suspects()
+        suspects = self.db.get_recent_suspects(2) if hasattr(self.db, "get_recent_suspects") else self.db.get_all_suspects()
         encounters = self.db.get_encounters(limit=100)
         metrics = self.db.get_metrics_history(30)
 
@@ -116,7 +116,7 @@ class MetricsEngine:
         data = {
             "exportado_em": datetime.now().isoformat(),
             "chart_data": self.get_chart_data(),
-            "suspeitos": self.db.get_all_suspects() if self.db else [],
+            "suspeitos": self.db.get_recent_suspects(2) if self.db and hasattr(self.db, "get_recent_suspects") else (self.db.get_all_suspects() if self.db else []),
             "encontros": self.db.get_encounters(limit=500) if self.db else [],
         }
         with open(filepath, "w", encoding="utf-8") as f:
@@ -130,7 +130,7 @@ class MetricsEngine:
             "summary": self.db.get_summary() if self.db else {},
             "chart_data": self.get_chart_data(),
             "hackers": self.db.get_hackers_only() if self.db else [],
-            "suspeitos": self.db.get_all_suspects() if self.db else [],
+            "suspeitos": self.db.get_recent_suspects(2) if self.db and hasattr(self.db, "get_recent_suspects") else (self.db.get_all_suspects() if self.db else []),
             "encontros": self.db.get_encounters(limit=100) if self.db else [],
             "last_update": datetime.now().isoformat()
         }

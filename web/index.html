@@ -309,21 +309,28 @@ function renderTable(suspects) {
         return;
     }
     tbody.innerHTML = suspects.map((s, i) => {
-        const nivelClass = { 'CRÍTICO': 'bg-danger', 'ALTO': 'bg-warning text-dark', 'MÉDIO': 'bg-warning bg-opacity-50', 'BAIXO': 'bg-secondary' }[s.nivel] || 'bg-secondary';
-        const statusClass = s.status === 'hacker' ? 'text-danger' : s.status === 'suspeito' ? 'text-warning' : 'text-secondary';
-        return `<tr>
-            <td>${i + 1}</td>
-            <td><strong>${escHtml(s.name || '?')}</strong></td>
-            <td><strong>${s.score || 0}</strong></td>
-            <td><span class="badge ${nivelClass} badge-nivel">${s.nivel || '?'}</span></td>
-            <td class="${statusClass}">${s.status || 'observacao'}</td>
-            <td>${s.meets || 0}</td>
-            <td class="text-secondary small">${(s.first_seen || '—').slice(0,10)}</td>
-            <td class="text-secondary small">${(s.last_seen || '—').slice(0,10)}</td>
-        </tr>`;
+        const nm = s.summoner_name || s.name || '?';
+        const sc = s.max_score || s.score || 0;
+        const nivel = s.nivel_max || s.nivel || 'BAIXO';
+        const meets = s.total_meets || s.meets || 0;
+        const status = s.status || 'observacao';
+        const fs = (s.first_seen || '').slice(0,10) || '-';
+        const ls = (s.last_seen || '').slice(0,10) || '-';
+        const nClass = {'CRITICO':'bg-danger','ALTO':'bg-warning text-dark','MEDIO':'bg-warning bg-opacity-50','BAIXO':'bg-secondary'}[nivel]||'bg-secondary';
+        const sClass = status==='hacker'?'text-danger':status==='suspeito'?'text-warning':'text-secondary';
+        const key = 'p'+i;
+        return '<tr style="cursor:pointer" onclick="toggleDetail(''+key+'',''+escHtml(nm)+'',''+sc+'',''+nivel+'',''+status+'',''+meets+'',''+ls+'')">'+
+            '<td>'+(i+1)+'</td>'+
+            '<td><strong>'+escHtml(nm)+'</strong></td>'+
+            '<td><strong class="'+(sc>=80?'text-danger':sc>=40?'text-warning':'')+'">'+sc+'</strong></td>'+
+            '<td><span class="badge '+nClass+'">'+nivel+'</span></td>'+
+            '<td class="'+sClass+'">'+status+'</td>'+
+            '<td>'+meets+'</td>'+
+            '<td class="text-secondary small">'+fs+'</td>'+
+            '<td class="text-secondary small">'+ls+'</td></tr>'+
+            '<tr id="det-'+key+'" style="display:none"><td colspan="8" class="p-3"><div id="detc-'+key+'">Carregando...</div></td></tr>';
     }).join('');
 }
-
 function filterTable() {
     // Reload with filter
     loadData();
@@ -352,6 +359,23 @@ function renderEncontros(encontros) {
             '<td><span class="badge '+nc+'">'+nivel+'</span></td>'+
             '<td>'+(sc>=80?'Hacker':sc>=40?'Suspeito':'Normal')+'</td></tr>';
     }).join('');
+}
+
+let detailOpen = null;
+function toggleDetail(key, nome, score, nivel, status, meets, ultimo) {
+    const row = document.getElementById('det-'+key);
+    if (!row) return;
+    if (detailOpen === key) {
+        row.style.display = 'none'; detailOpen = null; return;
+    }
+    document.querySelectorAll('[id^="det-"]').forEach(r => r.style.display = 'none');
+    row.style.display = 'table-row';
+    detailOpen = key;
+    const content = document.getElementById('detc-'+key);
+    if (!content) return;
+    content.innerHTML = '<div class="row"><div class="col-12"><strong>'+escHtml(nome)+'</strong> | Score: '+score+' | '+nivel+' | '+status+' | Encontros: '+meets+'</div></div>'+
+        '<div class="row mt-1"><div class="col-12 text-secondary small">Ultimo confronto: '+ultimo+' | PUUID registrado no banco</div></div>'+
+        '<div class="mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('det-'+key+'').style.display='none'; detailOpen=null">Fechar</button></div>';
 }
 
 function refresh() {
