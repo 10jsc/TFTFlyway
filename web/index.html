@@ -141,7 +141,27 @@
         </div>
     </div>
 
-    <!-- Linha 4: Log / Terminal -->
+    <!-- Linha 4: Encontros recentes -->
+    <div class="card mt-3">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-people me-2"></i>Ultimos Oponentes Encontrados</span>
+            <span class="text-secondary small" id="encounters-count">0</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-dark table-hover mb-0 small" id="encounters-table">
+                    <thead class="text-secondary">
+                        <tr><th>Data</th><th>Jogador</th><th>Score</th><th>Nivel</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="encounters-body">
+                        <tr><td colspan="5" class="text-center text-secondary py-3">Nenhum encontro ainda</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Linha 5: Log / Terminal -->
     <div class="card mt-3">
         <div class="card-header py-2">
             <span><i class="bi bi-terminal me-2"></i>Log de Atividades</span>
@@ -267,8 +287,10 @@ function renderData(data) {
     }
 
     // Tabela
-    const suspects = c.top_suspects || [];
+    const suspects = data.suspeitos || c.top_suspects || [];
     renderTable(suspects);
+    const encontros = data.encontros || [];
+    renderEncontros(encontros);
 
     // Log
     const logEl = document.getElementById('log-output');
@@ -309,6 +331,27 @@ function filterTable() {
 
 function escHtml(s) { return String(s).replace(/[&<>"]/g, function(m) {
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; });
+}
+
+function renderEncontros(encontros) {
+    const tbody = document.getElementById('encounters-body');
+    const count = document.getElementById('encounters-count');
+    if (!encontros || encontros.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-secondary py-3">Nenhum encontro registrado</td></tr>';
+        if (count) count.textContent = '0'; return;
+    }
+    if (count) count.textContent = encontros.length;
+    tbody.innerHTML = encontros.map(e => {
+        const sc = e.score || 0;
+        const nivel = e.nivel || 'BAIXO';
+        const cor = sc >= 80 ? 'text-danger' : sc >= 40 ? 'text-warning' : 'text-secondary';
+        const nc = {'CRITICO':'bg-danger','ALTO':'bg-warning text-dark','MEDIO':'bg-warning bg-opacity-50','BAIXO':'bg-secondary'}[nivel]||'bg-secondary';
+        return '<tr><td class="text-secondary small">'+(e.encounter_date||'').slice(0,19)+'</td>'+
+            '<td><strong>'+escHtml(e.summoner_name||e.player||'?')+'</strong></td>'+
+            '<td class="'+cor+'"><strong>'+sc+'</strong></td>'+
+            '<td><span class="badge '+nc+'">'+nivel+'</span></td>'+
+            '<td>'+(sc>=80?'Hacker':sc>=40?'Suspeito':'Normal')+'</td></tr>';
+    }).join('');
 }
 
 function refresh() {

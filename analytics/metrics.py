@@ -125,11 +125,13 @@ class MetricsEngine:
 
     # ----------------------------------------------------------------
     def get_dashboard_json(self) -> str:
-        """Gera JSON pronto para o dashboard web."""
+        """Gera JSON completo para o dashboard web."""
         data = {
             "summary": self.db.get_summary() if self.db else {},
             "chart_data": self.get_chart_data(),
             "hackers": self.db.get_hackers_only() if self.db else [],
+            "suspeitos": self.db.get_all_suspects() if self.db else [],
+            "encontros": self.db.get_encounters(limit=100) if self.db else [],
             "last_update": datetime.now().isoformat()
         }
         return json.dumps(data, ensure_ascii=False)
