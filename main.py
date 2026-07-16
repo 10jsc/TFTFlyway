@@ -459,6 +459,16 @@ class TFTFlyway:
                             else:
                                 print(f"   {C.G}Nenhum 3★ suspeito nesta partida.{C.RESET}")
                             break
+                    # FALLBACK: escaneia historico de cada jogador para confirmacao
+                    print(f"   {C.D}Fallback: escaneando historico dos jogadores...{C.RESET}")
+                    for nm in nomes_partida:
+                        res = self.detector.escanear_jogador(nm)
+                        if res and not res.get("error"):
+                            sc = res.get("score_total", 0)
+                            if sc >= 80:
+                                print(f"   {C.R}🚨 HACKER (historico): {nm} ({sc}){C.RESET}")
+                                if self.db:
+                                    self.db.add_or_update_suspect(res.get("puuid") or f"his_{nm}", nm, "", sc, "CRITICO", True)
                     relatorio = self.detector.get_relatorio()
 
                     relatorio = self.detector.get_relatorio()
