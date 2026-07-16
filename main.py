@@ -415,25 +415,50 @@ class TFTFlyway:
                     print(f"{C.Y}⏹️ Partida encerrada ({phase}){C.RESET}")
                     print(f"{C.Y}{'='*50}{C.RESET}")
 
-                    # === ANALISE POS-PARTIDA AUTONOMA ===
-                    print(f"   {C.D}Analise pos-partida...{C.RESET}")
-                    nomes = []
+                    # === ANALISE POS-PARTIDA: busca PARTIDA DIRETA ===
+                    print(f"   {C.D}Analise pos-partida direta...{C.RESET}")
+                    nomes_partida = []
                     try:
                         if self.live.available:
-                            nomes = [p.get("summonerName", "") for p in self.live.get_player_list()
-                                   if p.get("summonerName", "").lower() != self.meu_nome.lower()]
+                            nomes_partida = [p.get("summonerName", "") for p in self.live.get_player_list()
+                                           if p.get("summonerName", "").lower() != self.meu_nome.lower()]
                     except: pass
-                    if nomes:
-                        print(f"   {C.D}Aguardando 2min para API indexar...{C.RESET}")
-                        time.sleep(120)
-                        for nm in nomes:
-                            res = self.detector.escanear_jogador(nm)
-                            if res and not res.get("error"):
-                                sc = res.get("score_total", 0)
-                                if sc >= 80:
-                                    print(f"   {C.R}🚨 HACKER: {nm} ({sc}){C.RESET}")
+                    if nomes_partida and self.meu_puuid and self.riot:
+                        print(f"   {C.D}Aguardando 3min para API indexar a partida...{C.RESET}")
+                        time.sleep(180)
+                        # Busca minhas partidas recentes e encontra a que tem esses jogadores
+                        match_ids = self.riot.get_match_ids(self.meu_puuid, 5)
+                        hackers_achados = []
+                        for mid in match_ids:
+                            match_data = self.riot.get_match(mid)
+                            if not match_data:
+                                continue
+                            participantes = match_data.get("info", {}).get("participants", [])
+                            # Verifica se algum dos nomes da partida esta aqui
+                            nomes_match = [p.get("riotIdGameName", "").lower() for p in participantes]
+                            match_encontrado = any(
+                                any(nm.split("#")[0].lower() in nmatch for nmatch in nomes_match)
+                                for nm in nomes_partida
+                            )
+                            if not match_encontrado:
+                                continue
+                            print(f"   {C.G}Partida encontrada! Analisando {len(participantes)} jogadores...{C.RESET}")
+                            for p in participantes:
+                                puuid_p = p.get("puuid", "")
+                                nome_p = p.get("riotIdGameName", p.get("summonerName", "?"))
+                                units = p.get("units", [])
+                                tres_star = sum(1 for u in units if u.get("tier", 0) == 3)
+                                if tres_star >= 3 and puuid_p != self.meu_puuid:
+                                    score_calc = min(100, 60 + (tres_star - 3) * 15)
+                                    print(f"   {C.R}🚨 {tres_star}x 3★: {nome_p} (score: {score_calc}){C.RESET}")
                                     if self.db:
-                                        self.db.add_or_update_suspect(res.get("puuid") or f"aut_{nm}", nm, "", sc, "CRITICO", True)
+                                        self.db.add_or_update_suspect(puuid_p, nome_p, "", score_calc, "CRITICO", True)
+                                    hackers_achados.append(nome_p)
+                            if hackers_achados:
+                                print(f"   {C.R}✅ {len(hackers_achados)} hacker(s) catalogados na lista negra!{C.RESET}")
+                            else:
+                                print(f"   {C.G}Nenhum 3★ suspeito nesta partida.{C.RESET}")
+                            break
                     relatorio = self.detector.get_relatorio()
 
                     relatorio = self.detector.get_relatorio()
