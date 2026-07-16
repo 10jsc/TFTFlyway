@@ -415,6 +415,23 @@ class TFTFlyway:
                     print(f"{C.Y}⏹️ Partida encerrada ({phase}){C.RESET}")
                     print(f"{C.Y}{'='*50}{C.RESET}")
 
+                    # ANALISE POS-PARTIDA: detecta 3★
+                    print(f"   {C.D}Analisando 3★ na partida...{C.RESET}")
+                    try:
+                        if self.lcu.connected and self.live.available:
+                            nomes_pos = [p.get("summonerName", "") for p in self.live.get_player_list()]
+                            if nomes_pos:
+                                time.sleep(20)
+                                for nome in nomes_pos:
+                                    if nome and nome.lower() != self.meu_nome.lower():
+                                        for p in self.detector.prescan_lobby([nome]).get("jogadores", []):
+                                            if p.get("score", 0) >= 80:
+                                                print(f"   {C.R}🚨 3★: {p['player']} ({p['score']}){C.RESET}")
+                                                if self.db:
+                                                    self.db.add_or_update_suspect(p.get("puuid") or f"pos_{nome}", p["player"], "", p["score"], "CRITICO", True)
+                    except:
+                        pass
+
                     relatorio = self.detector.get_relatorio()
                     hackers = relatorio.get("hackers", [])
                     if hackers:
