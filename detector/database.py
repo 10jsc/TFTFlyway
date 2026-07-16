@@ -219,34 +219,39 @@ class SuspectDatabase:
         return max(a, b, key=lambda x: niveis.index(x) if x in niveis else 0)
 
     def get_recent_suspects(self, limit_matches: int = 2) -> List[Dict]:
-        """Retorna suspeitos das ultimas N partidas (evita poluicao)."""
+        """Retorna suspeitos: hackers/suspeitos sempre, normais so das ultimas N partidas."""
         cur = self.conn.cursor()
-        # Pega datas das ultimas N partidas via metricas
+        # Sempre retorna hackers e suspeitos (score >= 40)
+        cur.execute("SELECT * FROM suspects WHERE status = 'hacker' OR max_score >= 40 ORDER BY max_score DESC")
+        fixos = [dict(r) for r in cur.fetchall()]
+        
+        # Busca normais (score < 40) apenas das ultimas N partidas
         cur.execute("SELECT date FROM metrics ORDER BY date DESC LIMIT ?", (limit_matches,))
         dates = [r[0] for r in cur.fetchall()]
-        if not dates:
-            return self.get_all_suspects()
-        # Busca suspeitos que tiveram encontros nessas datas
-        suspects = []
-        for d in dates:
-            day = d[:10]
-            cur.execute("""
-                SELECT DISTINCT s.* FROM suspects s
-                JOIN encounters e ON e.puuid = s.puuid
-                WHERE e.encounter_date LIKE ?
-            """, (day + '%',))
-            suspects.extend([dict(r) for r in cur.fetchall()])
-        # Se nao tiver encontros, retorna todos (fallback)
-        if not suspects:
-            return self.get_all_suspects()
-        # Remove duplicatas mantendo o mais recente
-        seen = set()
-        unique = []
-        for s in suspects:
-            if s['puuid'] not in seen:
-                seen.add(s['puuid'])
-                unique.append(s)
-        return unique
+        if dates:
+            normais = []
+            for d in dates:
+                day = d[:10]
+                cur.execute("""
+                    SELECT DISTINCT s.* FROM suspects s
+                    JOIN encounters e ON e.puuid = s.puuid
+                    WHERE e.encounter_date LIKE ? AND s.max_score < 40
+                """, (day + '%',))
+                normais.extend([dict(r) for r in cur.fetchall()])
+            # Se nao tiver encontros, retorna normais recentes pelo last_seen
+            if not normais:
+                cur.execute("SELECT * FROM suspects WHERE max_score < 40 ORDER BY last_seen DESC LIMIT 20")
+                normais = [dict(r) for r in cur.fetchall()]
+            # Remove duplicatas
+            seen = set()
+            uniq = []
+            for s in fixos + normais:
+                if s['puuid'] not in seen:
+                    seen.add(s['puuid'])
+                    uniq.append(s)
+            return uniq
+        # Fallback: retorna todos
+        return self.get_all_suspects()
 
     def close(self):
         self.conn.close()
