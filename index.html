@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TFTFlyway — Anti-Cheat Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root { --bg-card: #1a1d23; --border-glow: #2a2d35; }
+        body { background: #0d0f14; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-glow); border-radius: 12px; }
+        .stat-card { transition: transform .15s; cursor: default; }
+        .stat-card:hover { transform: translateY(-2px); border-color: #375a7f; }
+        .hacker-critical { color: #dc3545; }
+        .hacker-alto { color: #fd7e14; }
+        .hacker-medio { color: #ffc107; }
+        .hacker-baixo { color: #6c757d; }
+        .navbar-brand { font-weight: 700; letter-spacing: -.5px; }
+        #last-update { font-size: .8rem; }
+        .badge-nivel { min-width: 70px; }
+        .table-hover tbody tr:hover { background: rgba(0,255,100,.08); }
+        .scanning { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+        .chart-container { position: relative; height: 200px; width: 100%; }
+        .terminal-text { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: .85rem; }
+        .header-gradient { background: linear-gradient(135deg, #4a7c59, #8db600, #d4a017); border-bottom: 3px solid #d4a017; }
+        .header-gradient .navbar-brand { color: #ffd700 !important; text-shadow: 0 0 12px rgba(255,215,0,.6); font-weight: 800; }
+        .header-gradient .text-light { color: #ffe066 !important; text-shadow: 0 0 8px rgba(255,200,0,.4); }
+        .header-gradient small { color: #c0c0c0 !important; }
+        .footer-blood { background: linear-gradient(135deg, #2d0000, #5c0000, #8b0000); border-top: 3px solid #ff0000; }
+        .footer-blood * { color: #ff8888 !important; }
+        .card-suspeitos { border-left: 4px solid #00ff6a !important; }
+        #suspects-table thead { background: linear-gradient(135deg, #002d12, #006b2f); color: #00ff88; }
+        #suspects-table thead th { border-bottom: 2px solid #00ff6a; font-weight: 600; letter-spacing: 1px; }
+        #suspects-table tbody tr { border-left: 3px solid transparent; transition: all .15s; }
+        #suspects-table tbody tr:hover { border-left-color: #00ff6a; background: rgba(0,255,100,.06); }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark header-gradient py-2">
+    <div class="container-fluid px-4">
+        <span class="navbar-brand">
+            <i class="bi bi-shield-shaded me-2 text-danger"></i>TFTFlyway
+            <small class="text-secondary fs-6 fw-normal">Anti-Cheat</small>
+        </span>
+        <div class="d-flex align-items-center gap-3">
+            <span id="status-badge" class="badge bg-secondary">Offline</span>
+            <span id="last-update" class="text-secondary">—</span>
+            <button class="btn btn-outline-light btn-sm" onclick="refresh()">
+                <i class="bi bi-arrow-clockwise"></i> Atualizar
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Linha 1: Stats Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3 col-6">
+            <div class="card stat-card p-3 text-center h-100">
+                <div class="text-secondary small">Total Suspeitos</div>
+                <div class="display-6 fw-bold" id="total-suspects">0</div>
+                <div class="text-secondary small">catalogados</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card stat-card p-3 text-center h-100 border-danger">
+                <div class="text-secondary small">Hackers</div>
+                <div class="display-6 fw-bold hacker-critical" id="total-hackers">0</div>
+                <div class="text-secondary small">confirmados</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card stat-card p-3 text-center h-100 border-warning">
+                <div class="text-secondary small">Suspeitos</div>
+                <div class="display-6 fw-bold text-warning" id="total-suspeitos">0</div>
+                <div class="text-secondary small">em observação</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card stat-card p-3 text-center h-100 border-info">
+                <div class="text-secondary small">Encontros</div>
+                <div class="display-6 fw-bold text-info" id="total-encounters">0</div>
+                <div class="text-secondary small">registrados</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Linha 2: Gráficos -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-8">
+            <div class="card p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Score Timeline</h6>
+                </div>
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Distribuição</h6>
+                </div>
+                <div class="chart-container">
+                    <canvas id="distChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Linha 3: Tabela de Suspeitos -->
+    <div class="card card-suspeitos">
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span><i class="bi bi-people-fill me-2"></i>Jogadores Suspeitos / Hackers</span>
+            <div>
+                <select class="form-select form-select-sm d-inline-block w-auto" id="filter-nivel" onchange="filterTable()">
+                    <option value="all">Todos os níveis</option>
+                    <option value="CRÍTICO">CRÍTICO</option>
+                    <option value="ALTO">ALTO</option>
+                    <option value="MÉDIO">MÉDIO</option>
+                    <option value="BAIXO">BAIXO</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-dark table-hover mb-0 small" id="suspects-table">
+                    <thead class="text-secondary">
+                        <tr>
+                            <th>#</th>
+                            <th>Jogador</th>
+                            <th>Score</th>
+                            <th>Nível</th>
+                            <th>Status</th>
+                            <th>Encontros</th>
+                            <th>1ª Vez</th>
+                            <th>Último</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suspects-body">
+                        <tr><td colspan="8" class="text-center text-secondary py-3">Aguardando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detail Modal -->
+        <div id="detail-modal" style="display:none;position:fixed;top:20%;left:50%;transform:translate(-50%,-20%);z-index:9999;background:#1a1d23;border:1px solid #375a7f;border-radius:12px;padding:24px;min-width:320px;box-shadow:0 0 40px rgba(0,0,0,0.7)">
+            <h5 class="mb-3">Detalhes do Jogador</h5>
+            <table class="table table-dark table-borderless small">
+                <tr><td class="text-secondary">Nome:</td><td id="detail-name" class="fw-bold"></td></tr>
+                <tr><td class="text-secondary">Score:</td><td id="detail-score"></td></tr>
+                <tr><td class="text-secondary">Nivel:</td><td id="detail-nivel"></td></tr>
+                <tr><td class="text-secondary">Status:</td><td id="detail-status"></td></tr>
+                <tr><td class="text-secondary">Encontros:</td><td id="detail-meets"></td></tr>
+                <tr><td class="text-secondary">Primeira vez:</td><td id="detail-first" class="text-secondary small"></td></tr>
+                <tr><td class="text-secondary">Ultima vez:</td><td id="detail-last" class="text-secondary small"></td></tr>
+            </table>
+            <button class="btn btn-outline-secondary btn-sm w-100" onclick="document.getElementById('detail-modal').style.display='none'">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Linha 4: Log / Terminal -->
+    <div class="card mt-3 footer-blood">
+        <div class="card-header py-2" style="background: rgba(0,0,0,0.3);">
+            <span><i class="bi bi-terminal me-2"></i>Log de Atividades</span>
+        </div>
+        <div class="card-body p-2" style="max-height: 150px; overflow-y: auto; background: #0a0c10;">
+            <pre id="log-output" class="terminal-text text-success mb-0" style="white-space: pre-wrap;">Aguardando conexão do sistema...</pre>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ===================================================================
+// CHARTS
+// ===================================================================
+let timelineChart, distChart;
+
+function initCharts() {
+    const ctx1 = document.getElementById('timelineChart').getContext('2d');
+    timelineChart = new Chart(ctx1, {
+        type: 'scatter',
+        data: { datasets: [{
+            label: 'Score',
+            data: [],
+            backgroundColor: '#dc3545',
+            borderColor: '#dc3545',
+            pointRadius: 5,
+        }]},
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { type: 'category', ticks: { color: '#6c757d', maxRotation: 45, font: { size: 10 } } },
+                y: { beginAtZero: true, max: 100, ticks: { color: '#6c757d', font: { size: 10 } } }
+            }
+        }
+    });
+
+    const ctx2 = document.getElementById('distChart').getContext('2d');
+    distChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ['BAIXO', 'MÉDIO', 'ALTO', 'CRÍTICO'],
+            datasets: [{
+                data: [0, 0, 0, 0],
+                backgroundColor: ['#6c757d', '#ffc107', '#fd7e14', '#dc3545'],
+                borderColor: '#1a1d23',
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#6c757d', padding: 8, font: { size: 10 } } }
+            }
+        }
+    });
+}
+
+// ===================================================================
+// LOAD DATA
+// ===================================================================
+async function loadData() {
+    try {
+        const res = await fetch('/api/data');
+        if (!res.ok) throw new Error('API não disponível');
+        const data = await res.json();
+        renderData(data);
+    } catch (e) {
+        // Tenta carregar de arquivo estático
+        try {
+            const res = await fetch('data.json');
+            const data = await res.json();
+            renderData(data);
+        } catch(e2) {
+            document.getElementById('log-output').textContent =
+                '⚠️ Nenhum dado disponível. Execute "python main.py --dashboard" primeiro.';
+        }
+    }
+}
+
+function renderData(data) {
+    const s = data.summary || {};
+    const c = data.chart_data || {};
+    const h = data.hackers || [];
+
+    // Stats
+    document.getElementById('total-suspects').textContent = s.total_suspects || 0;
+    document.getElementById('total-hackers').textContent = s.hackers || 0;
+    document.getElementById('total-suspeitos').textContent = s.suspeitos || 0;
+    document.getElementById('total-encounters').textContent = s.total_encounters || 0;
+
+    // Status badge
+    const badge = document.getElementById('status-badge');
+    badge.textContent = '🟢 Online';
+    badge.className = 'badge bg-success';
+
+    // Last update
+    document.getElementById('last-update').textContent =
+        'Atualizado: ' + (data.last_update || new Date().toISOString()).slice(0,19);
+
+    // Distribuição chart
+    const dist = c.nivel_distribution || {};
+    if (distChart) {
+        distChart.data.datasets[0].data = [
+            dist.BAIXO || 0, dist.MÉDIO || 0, dist.ALTO || 0, dist.CRÍTICO || 0
+        ];
+        distChart.update();
+    }
+
+    // Timeline chart
+    const timeline = c.score_timeline || [];
+    if (timelineChart && timeline.length > 0) {
+        const labels = timeline.map(t => {
+            const d = (t.date || '').slice(11,19);
+            const n = (t.name || '').slice(0,8);
+            return n + ' ' + d;
+        });
+        const scores = timeline.map(t => t.score || 0);
+        timelineChart.data.labels = labels;
+        timelineChart.data.datasets[0].data = scores.map((v,i) => ({x: labels[i], y: v}));
+        timelineChart.update();
+    }
+
+    // Tabela
+    const suspects = c.top_suspects || [];
+    renderTable(suspects);
+
+    // Log
+    const logEl = document.getElementById('log-output');
+    const hackerCount = s.hackers || 0;
+    const suspeitoCount = s.suspeitos || 0;
+    logEl.textContent =
+        `[${new Date().toLocaleString()}] ✅ Dados carregados | ` +
+        `Total: ${s.total_suspects || 0} | Hackers: ${hackerCount} | Suspeitos: ${suspeitoCount} | ` +
+        `Encontros: ${s.total_encounters || 0}`;
+}
+
+function renderTable(suspects) {
+    const tbody = document.getElementById('suspects-body');
+    if (!suspects || suspects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-3">Nenhum suspeito registrado</td></tr>';
+        return;
+    }
+    tbody.innerHTML = suspects.map((s, i) => {
+        const nome = s.name || s.summoner_name || '?';
+        const nivel = (s.nivel || s.nivel_max || 'BAIXO').toUpperCase().replace('Í','I');
+        const nivelClass = { 'CRITICO': 'bg-danger', 'ALTO': 'bg-warning text-dark', 'MEDIO': 'bg-warning bg-opacity-50', 'BAIXO': 'bg-secondary' }[nivel] || 'bg-secondary';
+        const st = s.status || 'observacao';
+        const statusClass = st === 'hacker' ? 'text-danger' : st === 'suspeito' ? 'text-warning' : 'text-secondary';
+        return `<tr style="cursor:pointer" onclick="showDetail('${escHtml(nome)}','${s.score || 0}','${nivel}','${st}','${s.meets || 0}','${s.first_seen || ''}','${s.last_seen || ''}')">
+            <td>${i + 1}</td>
+            <td><strong>${escHtml(nome)}</strong></td>
+            <td><strong>${s.score || 0}</strong></td>
+            <td><span class="badge ${nivelClass} badge-nivel">${nivel}</span></td>
+            <td class="${statusClass}">${st}</td>
+            <td>${s.meets || 0}</td>
+            <td class="text-secondary small">${(s.first_seen || '—').slice(0,10)}</td>
+            <td class="text-secondary small">${(s.last_seen || '—').slice(0,10)}</td>
+        </tr>`;
+    }).join('');
+}
+
+function showDetail(nome, score, nivel, status, meets, first, last) {
+    document.getElementById('detail-name').textContent = nome;
+    document.getElementById('detail-score').textContent = score;
+    const badCls = { 'CRITICO':'bg-danger', 'ALTO':'bg-warning text-dark', 'BAIXO':'bg-secondary' };
+    const el = document.getElementById('detail-nivel');
+    el.className = 'badge ' + (badCls[nivel.toUpperCase().replace('Í','I')] || 'bg-secondary');
+    el.textContent = nivel;
+    document.getElementById('detail-status').textContent = status;
+    document.getElementById('detail-meets').textContent = meets;
+    document.getElementById('detail-first').textContent = first ? first.slice(0,19) : '---';
+    document.getElementById('detail-last').textContent = last ? last.slice(0,19) : '---';
+    document.getElementById('detail-modal').style.display = 'block';
+}
+
+function filterTable() {
+    // Reload with filter
+    loadData();
+}
+
+function escHtml(s) { return String(s).replace(/[&<>"]/g, function(m) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; });
+}
+
+function refresh() {
+    document.getElementById('log-output').textContent = '[⟳] Atualizando...';
+    loadData();
+}
+
+// ===================================================================
+// INIT
+// ===================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    loadData();
+    setInterval(loadData, 15000); // Auto-refresh a cada 15s
+});
+</script>
+<div class="text-center text-secondary small mt-4 py-2" style="border-top: 1px solid #2a2d35;">
+    Desenvolvido por <strong style="color:#d4a017;">Jonatan Silva Costa</strong> — <a href="https://github.com/10jsc" target="_blank" style="color:#8db600;">github.com/10jsc</a>
+</div>
+</body>
+</html>
