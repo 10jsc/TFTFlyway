@@ -14,71 +14,8 @@
 ================================================================================
 DESCRIÇÃO DO PROJETO
 ================================================================================
-
-O TFTFlyway é um sistema modulard e detecção anti-cheat focado em
-Teamfight Tactics (TFT). Ele combina análise histórica de partidas via
-API oficial da Riot Games com monitoramento comportamental em tempo real
-para identificar jogadores suspeitos, smurfs e hackers.
-
-================================================================================
-PRINCIPAIS FUNCIONALIDADES
-================================================================================
-
-🕵️ ANTI-CHEAT / DETECÇÃO
-──────────────────────────────────────────────────────────────────────────────
-  scan                          Escaneia jogadores na sala atual
-  monitor [N]                   Monitoramento contínuo (N=intervalo em seg)
-  search <nome>                 Analisa um jogador específico pelo nome
-  blacklist                     Lista negra de hackers confirmados
-
-  📊 Score Híbrido (0-100):
-    • Média de 3★ por partida (20%)
-    • Win rate e Top 4 rate (25%)
-    • APM — Ações por minuto (25%)
-    • Tempo de reação e consistência (15%)
-    • Dano médio e level speed (15%)
-
-  🎯 Níveis de Suspeição:
-    • 0-39:   BAIZO   — Jogador normal
-    • 40-59:  MÉDIO   — Possível suspeito
-    • 60-79:  ALTO    — Provável hacker 🟠
-    • 80-100: CRÍTICO — Hacker confirmado 🔴
-
-  🔍 Detecções Especiais:
-    • Smurf detection (conta nova + performance alta)
-    • Win streak anomalo
-    • Comportamento robótico (consistência perfeita)
-
-📡 RASTREAMENTO
-──────────────────────────────────────────────────────────────────────────────
-  track [N]                     Rastreia partida em tempo real (N=intervalo)
-  probe                         Sonda o servidor TFT diretamente
-  collect                       Coleta dados de todos os canais disponíveis
-
-  📶 Canais de Dados:
-    • LCU (Lockfile) — Conexão com o cliente do LoL
-    • Live Client API (porta 2999) — Dados em tempo real
-    • Riot API — Histórico de partidas e summoners
-    • Server Probe — Comunicação direta com servidor TFT
-    • Game Process — Extração de dados do processo do jogo
-
-💾 BANCO DE DADOS
-──────────────────────────────────────────────────────────────────────────────
-  • Catálogo persistente de suspeitos (SQLite)
-  • Histórico completo de encontros por jogador
-  • Métricas e estatísticas temporais
-  • Lista negra de hackers confirmados por PUUID
-  • Relatórios exportáveis em JSON
-
-🌐 DASHBOARD WEB
-──────────────────────────────────────────────────────────────────────────────
-  • Interface Bootstrap 5 responsiva
-  • Gráficos interativos com Chart.js
-  • Tabela de suspeitos com filtros por nível
-  • Timeline de scores e encontros
-  • Auto-refresh a cada 15 segundos
-  • Modo escuro nativo
-
+Todo o conteúdo foi removido! O projeto foi fortemente aperfeiçoado, já encontrou e catalogou centenas de hakers. 
+O contato está na descrição; caso queira colaboração, só chamar.
 ================================================================================
 ARQUITETURA
 ================================================================================
@@ -109,53 +46,4 @@ ARQUITETURA
      │   │ Dashboard    │
      └──────────────────┘
 
-================================================================================
-COMANDOS RÁPIDOS
-================================================================================
 
-  python main.py                  Menu interativo
-  python main.py scan             Escaneia sala atual
-  python main.py monitor          Monitoramento contínuo
-  python main.py dashboard        Dashboard web (porta 8000)
-  python main.py search "Jogador" Busca jogador específico
-  python main.py report           Relatório completo
-  python main.py blacklist        Lista negra de hackers
-  python main.py track            Rastreamento em tempo real
-  python main.py probe            Sonda servidor TFT
-  python main.py collect          Coleta multi-canal
-
-================================================================================
-INSTALAÇÃO RÁPIDA
-================================================================================
-
-  1. git clone https://github.com/10jsc/TFTFlyway.git
-  2. cd TFTFlyway
-  3. pip install -r requirements.txt
-  4. Edite .env com seu Riot ID e Tagline
-  5. python main.py
-
-================================================================================
-DEPENDÊNCIAS
-================================================================================
-
-  requests          Comunicação HTTP com APIs
-  websocket-client  Conexão WebSocket (opcional)
-  python-dotenv     Gerenciamento de .env
-  pandas            Manipulação de dados
-  matplotlib        Gráficos (opcional)
-
-================================================================================
-AUTOR
-================================================================================
-
-  Johnatan Silva Costa (Titanjsc / 0Ph4nT3on#5083)
-  GitHub: https://github.com/10jsc
-  Site:   https://10jsc.github.io
-
-================================================================================
-VERSÃO
-================================================================================
-
-  v1.0.0 — Julho 2026
-
-================================================================================
