@@ -1,1 +1,0 @@
-# TFTFlyway - Detector Module
